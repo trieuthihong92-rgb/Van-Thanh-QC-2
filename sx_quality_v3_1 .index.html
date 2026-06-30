@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Theo Dõi Chất Lượng Sản Xuất – Vạn Thành</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0d1117;--surface:#161b27;--surface2:#1e2436;--border:#2a3045;--accent:#3b82f6;--accent-g:linear-gradient(135deg,#3b82f6,#6366f1);--green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--purple:#a78bfa;--orange:#f97316;--text:#e2e8f0;--text2:#64748b;--text3:#94a3b8;--radius:10px;--shadow:0 4px 24px rgba(0,0,0,.35);--font:'Segoe UI','Arial',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;min-height:100vh}
+/* Setup */
+#setupScreen{position:fixed;inset:0;background:rgba(13,17,23,.97);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(4px)}
+.setup-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px;width:490px;max-width:95vw;box-shadow:var(--shadow)}
+.setup-logo{width:50px;height:50px;background:var(--accent-g);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 18px}
+.setup-box h2{text-align:center;font-size:17px;font-weight:700;margin-bottom:5px}
+.setup-box>p{text-align:center;color:var(--text2);font-size:12px;margin-bottom:24px}
+.setup-section{margin-bottom:14px}
+.setup-section label{display:block;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.setup-section input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;transition:.15s}
+.setup-section input:focus{border-color:var(--accent)}
+.setup-section input::placeholder{color:var(--text2)}
+.setup-hint{font-size:10px;color:var(--text2);margin-top:4px}
+.btn-setup{width:100%;padding:11px;border-radius:7px;border:none;cursor:pointer;background:var(--accent-g);color:#fff;font-size:14px;font-weight:700;transition:.15s;margin-top:4px}
+.btn-setup:hover{opacity:.9}
+.btn-setup:disabled{opacity:.5;cursor:not-allowed}
+.setup-error{color:var(--red);font-size:11px;margin-top:8px;text-align:center;display:none;padding:7px;background:rgba(239,68,68,.1);border-radius:6px}
+.setup-divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+#sdkStatus{font-size:11px;padding:6px 10px;border-radius:6px;margin-bottom:12px;text-align:center}
+.sdk-ok{background:rgba(34,197,94,.1);color:var(--green)}.sdk-err{background:rgba(239,68,68,.1);color:var(--red)}.sdk-wait{background:rgba(245,158,11,.1);color:var(--yellow)}
+/* Header */
+.header{background:linear-gradient(90deg,var(--surface),var(--bg));border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+.header-logo{width:32px;height:32px;background:var(--accent-g);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.header-info h1{font-size:14px;font-weight:800}
+.header-info span{font-size:10px;color:var(--text2)}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:7px}
+.user-chip{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11px}
+.user-dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 5px var(--green)}
+.conn-dot{width:7px;height:7px;border-radius:50%}
+.conn-ok{background:var(--green);box-shadow:0 0 5px var(--green)}.conn-err{background:var(--red)}.conn-pending{background:var(--yellow)}
+#connStatus{font-size:10px;color:var(--text2);display:flex;align-items:center;gap:4px}
+.btn{padding:5px 11px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600;transition:.15s}
+.btn-outline{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-outline:hover{background:var(--border)}
+.btn-accent{background:var(--accent-g);color:#fff}
+.btn-sm{padding:4px 8px;font-size:10px}
+.btn-orange{background:linear-gradient(135deg,#f97316,#ef4444);color:#fff}
+/* Nav */
+.nav-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;overflow-x:auto}
+.nav-tab{padding:9px 16px;cursor:pointer;color:var(--text2);font-size:12px;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap;transition:.15s}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.nav-tab.active-orange{color:var(--orange);border-bottom-color:var(--orange)}
+.nav-tab:hover:not(.active):not(.active-orange){color:var(--text)}
+/* Pages */
+.page{display:none;padding:14px 20px;animation:fadeIn .2s}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:12px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--kpi-color,var(--accent))}
+.kpi-label{color:var(--text2);font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.kpi-val{font-size:19px;font-weight:800}
+.kpi-sub{color:var(--text2);font-size:9.5px;margin-top:2px}
+/* Charts */
+.charts-2{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px}
+.chart-card h3{font-size:11px;font-weight:700;margin-bottom:9px;color:var(--text3)}
+/* Section title */
+.sec-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:9px;border-left:3px solid var(--accent);padding-left:9px}
+.sec-title-orange{border-left-color:var(--orange) !important}
+/* Entry table */
+.entry-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:10px}
+.entry-toolbar{display:flex;align-items:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.entry-toolbar span{font-size:11px;font-weight:700;color:var(--accent)}
+.entry-toolbar .hint{font-size:10px;color:var(--text2)}
+.etbl{border-collapse:collapse;width:100%;min-width:1300px}
+.etbl th{background:var(--surface2);padding:5px 6px;text-align:center;font-size:9px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border);white-space:nowrap}
+.etbl th .unit{font-weight:400;color:var(--text3);text-transform:none;letter-spacing:0}
+.etbl td{padding:3px 4px;border-top:1px solid var(--border);vertical-align:middle}
+.etbl tr.entry-row td{background:rgba(59,130,246,.04)}
+.ei{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:5px;padding:4px 6px;color:var(--text);font-size:11px;outline:none;transition:.15s;min-width:0}
+.ei:focus{border-color:var(--accent)}
+.ei.ro{color:var(--yellow);font-weight:700;background:rgba(245,158,11,.06);border-color:rgba(245,158,11,.3)}
+.ei.ro-green{color:var(--green);font-weight:700;background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.3)}
+.ei-date{width:96px}.ei-code{width:72px}.ei-mach{width:60px}.ei-stg{width:70px}
+.ei-num{width:58px;text-align:right}.ei-def{width:68px}.ei-pct{width:50px}.ei-dn{width:48px}.ei-dnr{width:95px}
+.cell-act{white-space:nowrap;padding:3px 7px!important}
+/* Cat entry */
+.cat-etbl{border-collapse:collapse;width:100%;min-width:1600px}
+.cat-etbl th{background:var(--surface2);padding:5px 6px;text-align:center;font-size:9px;color:var(--text2);font-weight:700;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+.cat-etbl th .unit{font-weight:400;color:var(--text3);text-transform:none}
+.cat-etbl td{padding:3px 4px;border-top:1px solid var(--border);vertical-align:middle}
+.cat-etbl tr.entry-row td{background:rgba(249,115,22,.04)}
+.ei-orange:focus{border-color:var(--orange) !important}
+/* Filter */
+.filter-bar{display:flex;gap:7px;align-items:center;margin-bottom:9px;flex-wrap:wrap}
+.filter-bar label{color:var(--text2);font-size:10px;font-weight:600}
+.filter-bar input,.filter-bar select{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:4px 8px;color:var(--text);font-size:11px;outline:none}
+/* Data table */
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+table.gtbl{border-collapse:collapse;width:100%;background:var(--surface);white-space:nowrap}
+table.gtbl th{background:var(--surface2);padding:6px 8px;text-align:center;font-size:9.5px;color:var(--text2);font-weight:700;text-transform:uppercase;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}
+table.gtbl td{padding:5px 8px;border-top:1px solid var(--border);text-align:center;font-size:11px}
+table.gtbl tr:hover td{background:var(--surface2)}
+.td-ok{color:var(--green);font-weight:700}.td-ng{color:var(--red);font-weight:700}.td-warn{color:var(--yellow);font-weight:700}
+.badge{display:inline-block;padding:2px 7px;border-radius:9px;font-size:10px;font-weight:700}
+.bg-red{background:rgba(239,68,68,.15);color:var(--red)}.bg-yellow{background:rgba(245,158,11,.15);color:var(--yellow)}.bg-green{background:rgba(34,197,94,.15);color:var(--green)}
+.bg-orange{background:rgba(249,115,22,.15);color:var(--orange)}
+.btn-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:3px;opacity:.55}
+.btn-del:hover{background:rgba(239,68,68,.15);opacity:1}
+/* Feed */
+.feed-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;max-height:280px;overflow-y:auto}
+.feed-item{display:flex;align-items:flex-start;gap:9px;padding:6px 0;border-bottom:1px solid var(--border)}
+.feed-item:last-child{border-bottom:none}
+.feed-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent-g);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+.feed-body{flex:1;min-width:0}
+.feed-user{font-weight:700;font-size:11px}
+.feed-detail{font-size:10px;color:var(--text2);margin-top:1px;line-height:1.4}
+.feed-time{font-size:9px;color:var(--text2);flex-shrink:0;white-space:nowrap}
+/* Toast / spinner */
+.empty-state{text-align:center;padding:36px;color:var(--text2)}
+.empty-state .ico{font-size:32px;margin-bottom:9px}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--green);color:#fff;padding:9px 16px;border-radius:7px;font-size:12px;font-weight:600;box-shadow:var(--shadow);z-index:9998;transform:translateY(60px);opacity:0;transition:.3s cubic-bezier(.22,1,.36,1)}
+.toast.show{transform:none;opacity:1}.toast.error{background:var(--red)}
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+/* Import badge */
+.import-badge{display:inline-block;background:rgba(249,115,22,.15);color:var(--orange);border:1px solid rgba(249,115,22,.3);border-radius:5px;padding:1px 6px;font-size:9px;font-weight:700;margin-left:5px;vertical-align:middle}
+@media(max-width:860px){.kpi-row{grid-template-columns:repeat(2,1fr)}.charts-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setupScreen">
+  <div class="setup-box">
+    <div class="setup-logo">🏭</div>
+    <h2>Chất Lượng Sản Xuất – Vạn Thành</h2>
+    <p>Hệ thống dùng chung — dữ liệu lưu Firebase realtime</p>
+    <div id="sdkStatus" class="sdk-wait">⏳ Đang kiểm tra Firebase SDK…</div>
+    <div class="setup-section"><label>API Key</label><input id="cfg_apiKey" placeholder="AIzaSy..."></div>
+    <div class="setup-section">
+      <label>Database URL</label>
+      <input id="cfg_dbUrl" placeholder="https://xxx-default-rtdb.firebaseio.com">
+      <div class="setup-hint">Tìm trong Realtime Database → Data</div>
+    </div>
+    <div class="setup-section"><label>Project ID</label><input id="cfg_projectId" placeholder="ten-project"></div>
+    <div class="setup-section"><label>App ID</label><input id="cfg_appId" placeholder="1:xxx:web:xxx"></div>
+    <hr class="setup-divider">
+    <div class="setup-section"><label>Tên của bạn</label><input id="cfg_username" placeholder="VD: Hồng QC" maxlength="40"></div>
+    <button class="btn-setup" id="btnConnect" onclick="connectFirebase()">🔌 Kết nối Firebase</button>
+    <div class="setup-error" id="setupError"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+  <div class="header">
+    <div class="header-logo">🏭</div>
+    <div class="header-info"><h1>Chất Lượng Sản Xuất</h1><span id="hdrDate"></span></div>
+    <div class="header-right">
+      <div id="connStatus"><div class="conn-dot conn-pending" id="connDot"></div><span id="connText">Đang kết nối…</span></div>
+      <div class="user-chip"><div class="user-dot"></div><span id="hdrUser">–</span></div>
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ CSV</button>
+      <button class="btn btn-outline btn-sm" onclick="doLogout()">↩ Ra</button>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" data-tab="dashboard" onclick="switchTab(this)">📊 Dashboard</div>
+    <div class="nav-tab" data-tab="entry" onclick="switchTab(this)">➕ Nhập liệu</div>
+    <div class="nav-tab" data-tab="cat" onclick="switchTab(this,'orange')">✂️ Công đoạn Cắt<span class="import-badge">67 bản ghi</span></div>
+    <div class="nav-tab" data-tab="data" onclick="switchTab(this)">📋 Dữ liệu</div>
+    <div class="nav-tab" data-tab="downtime" onclick="switchTab(this)">⏱ Dừng máy</div>
+    <div class="nav-tab" data-tab="activity" onclick="switchTab(this)">📡 Nhóm</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="page-dashboard" class="page active">
+    <div class="kpi-row" id="kpiRow"></div>
+    <div class="charts-2">
+      <div class="chart-card"><h3>📈 KL OK vs NG theo ngày (14 ngày)</h3><canvas id="cBar" height="210"></canvas></div>
+      <div class="chart-card"><h3>🥧 Phân bố lỗi (kg)</h3><canvas id="cPie" height="210"></canvas></div>
+    </div>
+    <div class="charts-2">
+      <div class="chart-card"><h3>📉 Tỷ lệ NG% theo ngày</h3><canvas id="cLine" height="210"></canvas></div>
+      <div class="chart-card"><h3>⏱ Dừng máy (phút) theo ngày</h3><canvas id="cDown" height="210"></canvas></div>
+    </div>
+    <div id="topDefects"></div>
+    <!-- Cat summary on dashboard -->
+    <div style="margin-top:14px">
+      <div class="sec-title sec-title-orange" style="margin-bottom:9px">✂️ Tổng quan Công đoạn Cắt</div>
+      <div class="kpi-row" id="catKpiDash"></div>
+    </div>
+  </div>
+
+  <!-- ENTRY (SX chung) -->
+  <div id="page-entry" class="page">
+    <div class="entry-wrap">
+      <div class="entry-toolbar">
+        <span>➕ Nhập bản ghi mới</span>
+        <span class="hint">— %NG = NG ÷ (OK+NG)</span>
+        <div style="margin-left:auto;display:flex;gap:5px;align-items:center">
+          <span style="color:var(--text2);font-size:10px" id="saveInfo"></span>
+          <button class="btn btn-outline btn-sm" onclick="clearEntryRow()">🔄 Xóa</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="etbl">
+          <thead><tr>
+            <th>Ngày *</th><th>Mã hàng *</th><th>Máy</th><th>Công đoạn</th>
+            <th>NVL vào<br><span class="unit">kg</span></th>
+            <th>Mục tiêu<br><span class="unit">kg</span></th>
+            <th>KL OK *<br><span class="unit">kg</span></th>
+            <th>KL NG<br><span class="unit">kg</span></th>
+            <th>NG%</th>
+            <th>Lỗi 1</th><th>KL1<br><span class="unit">kg</span></th><th>%1</th>
+            <th>Lỗi 2</th><th>KL2<br><span class="unit">kg</span></th><th>%2</th>
+            <th>Lỗi 3</th><th>KL3<br><span class="unit">kg</span></th><th>%3</th>
+            <th>Lỗi khác</th><th>KLk<br><span class="unit">kg</span></th><th>%k</th>
+            <th>Dừng<br><span class="unit">ph</span></th>
+            <th>Lý do dừng</th>
+            <th>Phế/dừng<br><span class="unit">kg</span></th>
+            <th></th>
+          </tr></thead>
+          <tbody>
+            <tr class="entry-row">
+              <td><input class="ei ei-date" type="date" id="f_date"></td>
+              <td><input class="ei ei-code" type="text" id="f_code" placeholder="VD: VT-001"></td>
+              <td><input class="ei ei-mach" type="text" id="f_machine" placeholder="Máy 1"></td>
+              <td><input class="ei ei-stg" type="text" id="f_stage" placeholder="Thổi"></td>
+              <td><input class="ei ei-num" type="number" id="f_input" placeholder="0" oninput="calcForm()"></td>
+              <td><input class="ei ei-num" type="number" id="f_target" placeholder="0"></td>
+              <td><input class="ei ei-num" type="number" id="f_ok" placeholder="0" oninput="calcForm()"></td>
+              <td><input class="ei ei-num" type="number" id="f_ng" placeholder="0" oninput="calcForm()"></td>
+              <td><input class="ei ei-pct ro" type="text" id="f_ng_rate" readonly></td>
+              <td><input class="ei ei-def" type="text" id="f_d1n" placeholder="Bavia"></td>
+              <td><input class="ei ei-num" type="number" id="f_d1q" placeholder="0" oninput="calcForm()"></td>
+              <td><input class="ei ei-pct ro" type="text" id="f_d1r" readonly></td>
+              <td><input class="ei ei-def" type="text" id="f_d2n" placeholder="Đốm đen"></td>
+              <td><input class="ei ei-num" type="number" id="f_d2q" placeholder="0" oninput="calcForm()"></td>
+              <td><input class="ei ei-pct ro" type="text" id="f_d2r" readonly></td>
+              <td><input class="ei ei-def" type="text" id="f_d3n" placeholder="Méo cổ"></td>
+              <td><input class="ei ei-num" type="number" id="f_d3q" placeholder="0" oninput="calcForm()"></td>
+              <td><input class="ei ei-pct ro" type="text" id="f_d3r" readonly></td>
+              <td><input class="ei ei-def" type="text" id="f_otn" placeholder="Khác"></td>
+              <td><input class="ei ei-num" type="number" id="f_otq" placeholder="0" oninput="calcForm()"></td>
+              <td><input class="ei ei-pct ro" type="text" id="f_otr" readonly></td>
+              <td><input class="ei ei-dn" type="number" id="f_dnm" placeholder="0"></td>
+              <td><input class="ei ei-dnr" type="text" id="f_dnr" placeholder="Kẹt khuôn..."></td>
+              <td><input class="ei ei-num" type="number" id="f_dns" placeholder="0"></td>
+              <td class="cell-act"><button class="btn btn-accent btn-sm" id="btnSave" onclick="saveRecord()">💾 Lưu</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p style="font-size:10px;color:var(--text2);padding:0 4px">💡 %NG = KL NG ÷ (KL OK + KL NG) × 100</p>
+  </div>
+
+  <!-- CẮT -->
+  <div id="page-cat" class="page">
+    <div class="kpi-row" id="catKpi"></div>
+    <div class="charts-2">
+      <div class="chart-card"><h3 style="color:var(--orange)">✂️ KL đạt vs Phế theo ngày (kg)</h3><canvas id="cCatBar" height="210"></canvas></div>
+      <div class="chart-card"><h3 style="color:var(--orange)">🥧 Tỷ lệ phế theo loại</h3><canvas id="cCatPie" height="210"></canvas></div>
+    </div>
+    <div class="charts-2">
+      <div class="chart-card"><h3 style="color:var(--orange)">📉 Tỷ lệ phế% theo ngày</h3><canvas id="cCatLine" height="210"></canvas></div>
+      <div class="chart-card"><h3 style="color:var(--orange)">⚙️ KL đạt theo máy</h3><canvas id="cCatMachine" height="210"></canvas></div>
+    </div>
+
+    <!-- Nhập mới -->
+    <div class="entry-wrap" style="border-color:rgba(249,115,22,.3)">
+      <div class="entry-toolbar" style="background:rgba(249,115,22,.06)">
+        <span style="color:var(--orange)">✂️ Nhập bản ghi Cắt mới</span>
+        <span class="hint">— %Phế = Tổng phế ÷ KL đầu vào</span>
+        <div style="margin-left:auto;display:flex;gap:5px;align-items:center">
+          <span style="color:var(--text2);font-size:10px" id="catSaveInfo"></span>
+          <button class="btn btn-outline btn-sm" onclick="clearCatRow()">🔄 Xóa</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="cat-etbl">
+          <thead><tr>
+            <th>Ngày *</th>
+            <th>Máy cắt *</th>
+            <th>Mã SP *</th>
+            <th>Tên SP</th>
+            <th>Vật liệu</th>
+            <th>KL đầu vào<br><span class="unit">kg/cuộn</span></th>
+            <th>Gam/túi TC<br><span class="unit">g</span></th>
+            <th>Gam ĐQ<br><span class="unit">g</span></th>
+            <th>Chiếc/cuộn</th>
+            <th>Cuộn/thếp</th>
+            <th>Túi/thùng</th>
+            <th>Thùng/bao</th>
+            <th>Cuộn lẻ</th>
+            <th>KL đạt *<br><span class="unit">kg</span></th>
+            <th>KL ko đạt<br><span class="unit">kg</span></th>
+            <th>Cái đạt</th>
+            <th>Cái ko đạt</th>
+            <th>Phế ĐQ<br><span class="unit">kg</span></th>
+            <th>Phế SX<br><span class="unit">kg</span></th>
+            <th>Phế trả thổi<br><span class="unit">kg</span></th>
+            <th>Phế lên máy<br><span class="unit">kg</span></th>
+            <th>Tổng phế<br><span class="unit">kg</span></th>
+            <th>%Phế</th>
+            <th></th>
+          </tr></thead>
+          <tbody>
+            <tr class="entry-row">
+              <td><input class="ei ei-date ei-orange" type="date" id="c_date"></td>
+              <td><input class="ei ei-mach ei-orange" type="text" id="c_machine" placeholder="Máy cắt 6" style="width:74px"></td>
+              <td><input class="ei ei-code ei-orange" type="text" id="c_code" placeholder="VT.TC.005"></td>
+              <td><input class="ei ei-stg ei-orange" type="text" id="c_name" placeholder="Tên SP" style="width:100px"></td>
+              <td><input class="ei ei-orange" type="text" id="c_mat" placeholder="PE" style="width:40px"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_kgin" placeholder="0" oninput="calcCat()"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_gtc" placeholder="0" step="0.01"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_gdq" placeholder="0" step="0.01"></td>
+              <td><input class="ei ei-orange" type="text" id="c_slc" placeholder="200" style="width:52px"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_ct" placeholder="0"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_stt" placeholder="0"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_stb" placeholder="0"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_cl" placeholder="0"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_kgdat" placeholder="0" oninput="calcCat()"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_kgng" placeholder="0" oninput="calcCat()"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_caidat" placeholder="0"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_caing" placeholder="0"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_pdq" placeholder="0" oninput="calcCat()"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_psx" placeholder="0" oninput="calcCat()"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_ptr" placeholder="0" oninput="calcCat()"></td>
+              <td><input class="ei ei-num ei-orange" type="number" id="c_plm" placeholder="0" oninput="calcCat()"></td>
+              <td><input class="ei ei-pct ro-green" type="text" id="c_tphe" readonly style="width:58px"></td>
+              <td><input class="ei ei-pct ro" type="text" id="c_pct" readonly></td>
+              <td class="cell-act"><button class="btn btn-orange btn-sm" id="btnCatSave" onclick="saveCatRecord()">💾 Lưu</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Data table cắt -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="sec-title sec-title-orange" style="margin:0">Dữ liệu công đoạn Cắt
+        <span class="import-badge">Import từ Excel</span>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <div class="filter-bar" style="margin:0">
+          <label>Từ:</label><input type="date" id="cfl_from" onchange="renderCatTable()">
+          <label>Đến:</label><input type="date" id="cfl_to" onchange="renderCatTable()">
+          <label>Mã:</label><input type="text" id="cfl_code" placeholder="Tất cả" oninput="renderCatTable()" style="width:80px">
+          <label>Máy:</label><input type="text" id="cfl_machine" placeholder="Tất cả" oninput="renderCatTable()" style="width:70px">
+        </div>
+        <span style="color:var(--text2);font-size:10px" id="catRowCount"></span>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="gtbl">
+        <thead><tr>
+          <th>#</th><th>Ngày</th><th>Máy</th><th>Mã SP</th><th>Tên SP</th><th>VL</th>
+          <th>KL vào<br>(kg)</th><th>g/túi TC</th><th>g ĐQ</th><th>Chiếc/cuộn</th>
+          <th>KL đạt<br>(kg)</th><th>KL NG<br>(kg)</th><th>Cái đạt</th><th>Cái NG</th>
+          <th>Phế ĐQ<br>(kg)</th><th>Phế SX<br>(kg)</th><th>Phế trả<br>(kg)</th><th>Phế lên<br>(kg)</th>
+          <th>Tổng phế<br>(kg)</th><th>%Phế</th><th>Nguồn</th><th></th>
+        </tr></thead>
+        <tbody id="catTblBody"></tbody>
+      </table>
+    </div>
+    <div id="catTblEmpty" class="empty-state" style="display:none"><div class="ico">✂️</div><div>Chưa có dữ liệu cắt</div></div>
+  </div>
+
+  <!-- DATA -->
+  <div id="page-data" class="page">
+    <div class="filter-bar">
+      <label>Từ:</label><input type="date" id="fl_from" onchange="renderTable()">
+      <label>Đến:</label><input type="date" id="fl_to" onchange="renderTable()">
+      <label>Mã:</label><input type="text" id="fl_code" placeholder="Tất cả" oninput="renderTable()" style="width:85px">
+      <label>Máy:</label><input type="text" id="fl_machine" placeholder="Tất cả" oninput="renderTable()" style="width:75px">
+      <button class="btn btn-outline btn-sm" onclick="clearFilters()">✕ Bỏ lọc</button>
+      <span style="color:var(--text2);font-size:10px" id="rowCount"></span>
+    </div>
+    <div class="tbl-wrap">
+      <table class="gtbl">
+        <thead><tr>
+          <th>#</th><th>Ngày</th><th>Mã hàng</th><th>Máy</th><th>Công đoạn</th>
+          <th>NVL vào</th><th>Mục tiêu</th><th>KL OK</th><th>KL NG</th><th>NG%</th>
+          <th>Lỗi 1</th><th>KL1</th><th>%1</th>
+          <th>Lỗi 2</th><th>KL2</th><th>%2</th>
+          <th>Lỗi 3</th><th>KL3</th><th>%3</th>
+          <th>Lỗi khác</th><th>KLk</th><th>%k</th>
+          <th>Dừng(ph)</th><th>Lý do</th><th>Phế/dừng</th><th>Người nhập</th><th></th>
+        </tr></thead>
+        <tbody id="tblBody"></tbody>
+      </table>
+    </div>
+    <div id="tblEmpty" class="empty-state" style="display:none"><div class="ico">📭</div><div>Chưa có dữ liệu</div></div>
+  </div>
+
+  <!-- DOWNTIME -->
+  <div id="page-downtime" class="page">
+    <div class="kpi-row" id="dtKpi"></div>
+    <div class="charts-2">
+      <div class="chart-card"><h3>⏱ Dừng theo máy (phút)</h3><canvas id="cDtMachine" height="220"></canvas></div>
+      <div class="chart-card"><h3>🥧 Lý do dừng</h3><canvas id="cDtReason" height="220"></canvas></div>
+    </div>
+    <div class="sec-title">Chi tiết dừng máy</div>
+    <div class="tbl-wrap">
+      <table class="gtbl">
+        <thead><tr><th>#</th><th>Ngày</th><th>Mã</th><th>Máy</th><th>C.đoạn</th><th>Dừng(ph)</th><th>Lý do</th><th>Phế/dừng</th><th>Mức độ</th><th>Người nhập</th></tr></thead>
+        <tbody id="dtBody"></tbody>
+      </table>
+    </div>
+    <div id="dtEmpty" class="empty-state" style="display:none"><div class="ico">✅</div><div>Chưa có sự cố</div></div>
+  </div>
+
+  <!-- ACTIVITY -->
+  <div id="page-activity" class="page">
+    <div class="charts-2" style="margin-bottom:12px">
+      <div>
+        <div class="sec-title">📡 Hoạt động nhóm (realtime)</div>
+        <div class="feed-wrap" id="feedWrap"><div class="empty-state" style="padding:16px"><div class="ico">📡</div><div>Đang tải...</div></div></div>
+      </div>
+      <div>
+        <div class="sec-title">👥 Theo người nhập</div>
+        <div class="chart-card" style="margin:0"><canvas id="cByUser" height="250"></canvas></div>
+      </div>
+    </div>
+    <div class="sec-title">📊 Tóm tắt đóng góp</div>
+    <div class="tbl-wrap">
+      <table class="gtbl">
+        <thead><tr><th>#</th><th>Người nhập</th><th>Bản ghi</th><th>Tổng OK (kg)</th><th>Tổng NG (kg)</th><th>NG%</th><th>Gần nhất</th></tr></thead>
+        <tbody id="userBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div><!-- /mainApp -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════ EMBEDDED CAT DATA (import từ Excel) ═══════════
+var CAT_IMPORT = [{"date": "2026-05-28", "machine": "Máy cắt 8", "code": "VT.TQX.006", "name": "T-shirt nhiệt trắng không in 25 x 40+150-nhám", "material": "PE", "kg_input": 30.0, "gam_tc": 5.65, "gam_dq": 0, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 7.78, "kg_ko_dat": 0, "cai_dat": 1870.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 2.92, "phe_tra": 0, "phe_len": 0, "tong_phe": 2.92}, {"date": "2026-05-28", "machine": "Máy cắt 9", "code": "VT.TQX.006", "name": "T-shirt nhiệt trắng không in 25 x 40+150-nhám", "material": "PE", "kg_input": 65.0, "gam_tc": 5.65, "gam_dq": 0, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 23.44, "kg_ko_dat": 0, "cai_dat": 6300.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 9.22, "phe_tra": 0, "phe_len": 0, "tong_phe": 9.22}, {"date": "2026-05-29", "machine": "Máy cắt 10", "code": "VT.TQX.006", "name": "T-shirt nhiệt trắng không in 25 x 40+150-nhám", "material": "PE", "kg_input": 27.64, "gam_tc": 5.65, "gam_dq": 0, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 5.4, "kg_ko_dat": 0, "cai_dat": 1400.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 2.7, "phe_tra": 0, "phe_len": 0, "tong_phe": 2.7}, {"date": "2026-05-29", "machine": "Máy cắt 11", "code": "VT.TQX-WG.007", "name": "T-shirt nhiệt trắng không in 25 x 40+150-PHSH", "material": "PHSH", "kg_input": 18.3, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 6.44, "kg_ko_dat": 0, "cai_dat": 700.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 2.58, "phe_tra": 0, "phe_len": 0, "tong_phe": 2.58}, {"date": "2026-05-29", "machine": "Máy cắt 13", "code": "VT.TQX.006", "name": "T-shirt nhiệt trắng không in 25 x 40+150-nhám", "material": "PE", "kg_input": 17.18, "gam_tc": 5.65, "gam_dq": 0, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 5.71, "kg_ko_dat": 0, "cai_dat": 1420.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 1.52, "phe_tra": 0, "phe_len": 0, "tong_phe": 1.52}, {"date": "2026-05-29", "machine": "Máy cắt 12", "code": "VT-TQX.BIO.002", "name": "T-shirt nhiệt trắng không in 25 x 40+150-PHSH", "material": "PHSH", "kg_input": 23.2, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 2.52, "kg_ko_dat": 0, "cai_dat": 420.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 1.32, "phe_tra": 0, "phe_len": 0, "tong_phe": 1.32}, {"date": "2026-05-30", "machine": "Máy cắt 14", "code": "Test", "name": "Túi rác đen 37*67", "material": "PE", "kg_input": 41.26, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "42", "cuon_thep": 0, "so_tui_thung": 10.0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 32.9, "kg_ko_dat": 0, "cai_dat": 1480.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 7.6, "phe_tra": 0, "phe_len": 0, "tong_phe": 7.6}, {"date": "2026-05-30", "machine": "Máy cắt 15", "code": "VT.TQX-WG.007", "name": "T-shirt nhiệt trắng không in 25 x 40+150-white-green", "material": "PE", "kg_input": 9.6, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "104", "cuon_thep": 0, "so_tui_thung": 1.0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 0.492, "kg_ko_dat": 0, "cai_dat": 104.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0.87, "phe_tra": 0, "phe_len": 0, "tong_phe": 0.87}, {"date": "2026-05-30", "machine": "Máy cắt 6", "code": "Test", "name": "Túi đựng thực phẩm VANTA 30x40cm (500gr/cuộn)", "material": "PE", "kg_input": 25.4, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "30", "cuon_thep": 0, "so_tui_thung": 34.0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 4.52, "kg_ko_dat": 0, "cai_dat": 1020.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 1.5, "phe_tra": 0, "phe_len": 0, "tong_phe": 1.5}, {"date": "2026-05-30", "machine": "Máy cắt 6", "code": "Test", "name": "Túi đựng thực phẩm VANTA 30x30cm (500gr/cuộn) ", "material": "PE", "kg_input": 0, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 53.0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 4.22, "kg_ko_dat": 0, "cai_dat": 1590.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0, "phe_tra": 0, "phe_len": 0, "tong_phe": 0.0}, {"date": "2026-05-30", "machine": "Máy cắt 11", "code": "VT-TQX.BIO.002", "name": "T-shirt nhiệt trắng không in 25 x 40+150-PHSH", "material": "PHSH", "kg_input": 0.0, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "115", "cuon_thep": 0, "so_tui_thung": 1.0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 1.0, "kg_ko_dat": 0, "cai_dat": 115.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0.64, "phe_tra": 0, "phe_len": 0, "tong_phe": 0.64}, {"date": "2026-05-30", "machine": "Máy cắt 12", "code": "VT-TQX.BIO.002", "name": "T-shirt nhiệt trắng không in 25 x 40+150-PHSH", "material": "PHSH", "kg_input": 0.0, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "40,50,63", "cuon_thep": 0, "so_tui_thung": 3.0, "so_thung": 4.0, "cuon_le": 0, "kg_dat": 3.72, "kg_ko_dat": 0, "cai_dat": 603.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 2.1, "phe_tra": 0, "phe_len": 0, "tong_phe": 2.1}, {"date": "2026-06-01", "machine": "Máy cắt 6", "code": "", "name": "Túi đựng thực phẩm VANTA 30x40cm (500gr/cuộn) ", "material": "PE", "kg_input": 0.0, "gam_tc": 6.7, "gam_dq": 3.64, "sl_cuon": "30", "cuon_thep": 8.0, "so_tui_thung": 0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 1.06, "kg_ko_dat": 0, "cai_dat": 240.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0.26, "phe_tra": 0, "phe_len": 0, "tong_phe": 0.26}, {"date": "2026-06-01", "machine": "Máy cắt 6", "code": "", "name": "Túi đựng thực phẩm VANTA 30x30cm (500gr/cuộn) ", "material": "PE", "kg_input": 0, "gam_tc": 6.7, "gam_dq": 2.68, "sl_cuon": "30", "cuon_thep": 4.0, "so_tui_thung": 0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 0.38, "kg_ko_dat": 0, "cai_dat": 120.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0.0, "phe_tra": 0, "phe_len": 0, "tong_phe": 0.0}, {"date": "2026-06-01", "machine": "Máy cắt 14", "code": "", "name": "Túi rác đen 37*67", "material": "PE", "kg_input": 32.4, "gam_tc": 34.0, "gam_dq": 18.16, "sl_cuon": "30,35", "cuon_thep": 16.5, "so_tui_thung": 0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 8.6, "kg_ko_dat": 0, "cai_dat": 535.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 2.4, "phe_tra": 0, "phe_len": 0, "tong_phe": 2.4}, {"date": "2026-06-04", "machine": "Máy cắt 13", "code": "VT.TQX.006", "name": "T-shirt nhiệt trắng không in 25 x 40+150", "material": "PE", "kg_input": 8.9, "gam_tc": 4.86, "gam_dq": 4.6, "sl_cuon": "54", "cuon_thep": 0, "so_tui_thung": 215.0, "so_thung": 6.0, "cuon_le": 0, "kg_dat": 6.86, "kg_ko_dat": 0, "cai_dat": 1475.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 4.0, "phe_tra": 0, "phe_len": 0, "tong_phe": 4.0}, {"date": "2026-06-05", "machine": "Máy cắt 13", "code": "VT.TQX.006", "name": "T-shirt nhiệt trắng không in 25 x 40+150", "material": "PE", "kg_input": 45.98, "gam_tc": 4.86, "gam_dq": 3.95, "sl_cuon": "50", "cuon_thep": 0, "so_tui_thung": 250200.0, "so_thung": 32.0, "cuon_le": 0, "kg_dat": 41.58, "kg_ko_dat": 0, "cai_dat": 9320.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 8.78, "phe_tra": 0, "phe_len": 0, "tong_phe": 8.78}, {"date": "2026-06-06", "machine": "Máy cắt 13", "code": "VT.TQX.006", "name": "T-shirt nhiệt trắng không in 25 x 40+150", "material": "PE", "kg_input": 54.04, "gam_tc": 4.86, "gam_dq": 4.62, "sl_cuon": "44+20", "cuon_thep": 0, "so_tui_thung": 220.0, "so_thung": 42.0, "cuon_le": 0, "kg_dat": 43.1, "kg_ko_dat": 0, "cai_dat": 9447.0, "cai_ko_dat": 0, "phe_dq": 9.94, "phe_sx": 0.94, "phe_tra": 0, "phe_len": 0, "tong_phe": 10.88}, {"date": "2026-06-08", "machine": "Máy cắt 13", "code": "VT.TQX.006", "name": "T-shirt nhiệt trắng không in 25 x 40+150", "material": "PE", "kg_input": 9.3, "gam_tc": 4.86, "gam_dq": 4.79, "sl_cuon": "21", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 6.0, "cuon_le": 0, "kg_dat": 6.0, "kg_ko_dat": 0, "cai_dat": 1260.0, "cai_ko_dat": 0, "phe_dq": 2.12, "phe_sx": 1.66, "phe_tra": 0, "phe_len": 0, "tong_phe": 3.78}, {"date": "2026-06-09", "machine": "Máy cắt 6", "code": "", "name": "Túi cuộn rau củ quả 20x30", "material": "PE", "kg_input": 7.1, "gam_tc": 2.5, "gam_dq": 2.15, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 0.12, "kg_ko_dat": 0, "cai_dat": 0, "cai_ko_dat": 0, "phe_dq": 0.0, "phe_sx": 0.8, "phe_tra": 0.0, "phe_len": 0.7, "tong_phe": 1.5}, {"date": "2026-06-09", "machine": "Máy cắt 24", "code": "TUIVGTVT-M", "name": "Găng tay size M", "material": "PE", "kg_input": 27.26, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 0, "kg_ko_dat": 0, "cai_dat": 0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 10.36, "phe_tra": 0, "phe_len": 9.6, "tong_phe": 19.96}, {"date": "2026-06-09", "machine": "Máy cắt 24", "code": "TUIVGTVT-M", "name": "Găng tay size M", "material": "PE", "kg_input": 8.5, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 0, "kg_ko_dat": 0, "cai_dat": 0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0, "phe_tra": 0, "phe_len": 0.06, "tong_phe": 0.06}, {"date": "2026-06-09", "machine": "Máy cắt 24", "code": "TUIVGTVT-M", "name": "Găng tay size M", "material": "PE", "kg_input": 16.7, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 0, "kg_ko_dat": 0, "cai_dat": 0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0, "phe_tra": 0, "phe_len": 2.76, "tong_phe": 2.76}, {"date": "2026-06-09", "machine": "Máy cắt 24", "code": "TUIVGTVT-M", "name": "Găng tay size M", "material": "PE", "kg_input": 15.3, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 0, "kg_ko_dat": 0, "cai_dat": 0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0, "phe_tra": 0, "phe_len": 1.26, "tong_phe": 1.26}, {"date": "2026-06-09", "machine": "Máy cắt 24", "code": "TUIVGTVT-M", "name": "Găng tay size M", "material": "PE", "kg_input": 31.7, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "100", "cuon_thep": 0, "so_tui_thung": 52.0, "so_thung": 0, "cuon_le": 0, "kg_dat": 9.9, "kg_ko_dat": 0, "cai_dat": 10400.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 11.66, "phe_tra": 6.64, "phe_len": 3.5, "tong_phe": 21.8}, {"date": "2026-06-10", "machine": "Máy cắt 23", "code": "TUIVGTVT-M", "name": "Găng tay size L", "material": "PE", "kg_input": 23.92, "gam_tc": 1.34, "gam_dq": 1.27, "sl_cuon": "100", "cuon_thep": 0, "so_tui_thung": 46.0, "so_thung": 0, "cuon_le": 0, "kg_dat": 6.52, "kg_ko_dat": 0, "cai_dat": 5400.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 12.26, "phe_tra": 0, "phe_len": 1.0, "tong_phe": 13.26}, {"date": "2026-06-10", "machine": "Máy cắt 24", "code": "TUIVGTVT-M", "name": "Găng tay size M", "material": "PE", "kg_input": 50.8, "gam_tc": 1.34, "gam_dq": 1.21, "sl_cuon": "100", "cuon_thep": 0, "so_tui_thung": 100.0, "so_thung": 0, "cuon_le": 0, "kg_dat": 15.44, "kg_ko_dat": 1.16, "cai_dat": 17800.0, "cai_ko_dat": 2200.0, "phe_dq": 0, "phe_sx": 32.66, "phe_tra": 0, "phe_len": 1.1, "tong_phe": 33.76}, {"date": "2026-06-11", "machine": "Máy cắt 24", "code": "TUIVGTVT-M", "name": "Găng tay size M", "material": "PE", "kg_input": 35.7, "gam_tc": 1.34, "gam_dq": 1.21, "sl_cuon": "100", "cuon_thep": 0, "so_tui_thung": 100.0, "so_thung": 0, "cuon_le": 0, "kg_dat": 9.6, "kg_ko_dat": 0.0, "cai_dat": 11700.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 20.2, "phe_tra": 0, "phe_len": 0.7, "tong_phe": 20.9}, {"date": "2026-06-12", "machine": "Máy cắt 24", "code": "TUIVGTVT-M", "name": "Găng tay size M", "material": "PE", "kg_input": 28.26, "gam_tc": 1.34, "gam_dq": 1.21, "sl_cuon": "100", "cuon_thep": 0, "so_tui_thung": 84.0, "so_thung": 0, "cuon_le": 0, "kg_dat": 9.98, "kg_ko_dat": 0.0, "cai_dat": 15200.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 18.32, "phe_tra": 0, "phe_len": 0.1, "tong_phe": 18.42}, {"date": "2026-06-15", "machine": "Máy cắt 24", "code": "TUIVGTVT-M", "name": "Găng tay size M", "material": "PE", "kg_input": 43.24, "gam_tc": 1.34, "gam_dq": 0.84, "sl_cuon": "100", "cuon_thep": 0, "so_tui_thung": 79.0, "so_thung": 0, "cuon_le": 0, "kg_dat": 11.72, "kg_ko_dat": 0.0, "cai_dat": 14400.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 25.42, "phe_tra": 0, "phe_len": 0.6, "tong_phe": 26.02}, {"date": "2026-06-16", "machine": "Máy cắt 24", "code": "TUIVGTVT-M", "name": "Găng tay size M", "material": "PE", "kg_input": 27.98, "gam_tc": 1.34, "gam_dq": 0.62, "sl_cuon": "100", "cuon_thep": 0, "so_tui_thung": 129.0, "so_thung": 0, "cuon_le": 0, "kg_dat": 8.33, "kg_ko_dat": 0.0, "cai_dat": 12900.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 18.4, "phe_tra": 0, "phe_len": 0.5, "tong_phe": 18.9}, {"date": "2026-06-17", "machine": "Máy cắt 24", "code": "TUIVGTVT-M", "name": "Găng tay size M", "material": "PE", "kg_input": 8.36, "gam_tc": 1.34, "gam_dq": 0.62, "sl_cuon": "100", "cuon_thep": 0, "so_tui_thung": 40.0, "so_thung": 0, "cuon_le": 0, "kg_dat": 2.68, "kg_ko_dat": 0.0, "cai_dat": 4000.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 5.7, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 5.7}, {"date": "2026-06-18", "machine": "Máy cắt 6", "code": "VT.TC.006", "name": "Túi cuộn rau quả cỡ 30x40", "material": "PE", "kg_input": 71.64, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "378", "cuon_thep": 0, "so_tui_thung": 24.0, "so_thung": 0, "cuon_le": 0, "kg_dat": 59.14, "kg_ko_dat": 0.0, "cai_dat": 320.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 5.7, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 5.7}, {"date": "2026-06-18", "machine": "Máy cắt 6", "code": "VT.TC.007", "name": "Túi cuộn rau quả cỡ 30x45( làm túi đóng gói)", "material": "PE", "kg_input": 0.0, "gam_tc": 0, "gam_dq": 0, "sl_cuon": "0", "cuon_thep": 0, "so_tui_thung": 0.0, "so_thung": 0, "cuon_le": 0, "kg_dat": 2.62, "kg_ko_dat": 0.0, "cai_dat": 400.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0.0, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 0.0}, {"date": "2026-06-19", "machine": "Máy cắt 2", "code": "VT.TR.001", "name": "Túi rác VANTA 55x65cm (màu đen) (3 cuộn/1kg)-gấp hông chữ C", "material": "PE", "kg_input": 41.4, "gam_tc": 20.0, "gam_dq": 15.5, "sl_cuon": "17", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 18.6, "kg_ko_dat": 19.08, "cai_dat": 4278.0, "cai_ko_dat": 3500.0, "phe_dq": 0, "phe_sx": 3.58, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 3.58}, {"date": "2026-06-19", "machine": "Máy cắt 4", "code": "VT.TC.005", "name": "Túi cuộn rau quả cỡ 20x30", "material": "PE", "kg_input": 44.2, "gam_tc": 2.7, "gam_dq": 2.68, "sl_cuon": "370", "cuon_thep": 3.0, "so_tui_thung": 13.0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 13.0, "kg_ko_dat": 19.62, "cai_dat": 4810.0, "cai_ko_dat": 6519.0, "phe_dq": 0, "phe_sx": 10.08, "phe_tra": 0, "phe_len": 1.32, "tong_phe": 11.4}, {"date": "2026-06-19", "machine": "Máy cắt 6", "code": "VT.TC.006", "name": "Túi cuộn rau quả cỡ 30x40", "material": "PE", "kg_input": 60.0, "gam_tc": 5.0, "gam_dq": 5.03, "sl_cuon": "199", "cuon_thep": 3.0, "so_tui_thung": 24.0, "so_thung": 9.0, "cuon_le": 0, "kg_dat": 51.0, "kg_ko_dat": 7.22, "cai_dat": 10125.0, "cai_ko_dat": 1450.0, "phe_dq": 0, "phe_sx": 1.5, "phe_tra": 0, "phe_len": 0.2, "tong_phe": 1.7}, {"date": "2026-06-19", "machine": "Máy cắt 6", "code": "VT.TC.006", "name": "Túi cuộn rau quả cỡ 30x40", "material": "PE", "kg_input": 78.8, "gam_tc": 5.0, "gam_dq": 5.6, "sl_cuon": "216", "cuon_thep": 3.0, "so_tui_thung": 24.0, "so_thung": 6.0, "cuon_le": 0, "kg_dat": 73.3, "kg_ko_dat": 0, "cai_dat": 19258.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 4.88, "phe_tra": 0, "phe_len": 0.58, "tong_phe": 5.46}, {"date": "2026-06-20", "machine": "Máy cắt 6", "code": "VT.TC.006", "name": "Túi cuộn rau quả cỡ 30x40", "material": "PE", "kg_input": 13.5, "gam_tc": 5.0, "gam_dq": 4.6, "sl_cuon": "114", "cuon_thep": 3.0, "so_tui_thung": 12.0, "so_thung": 1.0, "cuon_le": 0, "kg_dat": 12.02, "kg_ko_dat": 0, "cai_dat": 456.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 1.52, "phe_tra": 0, "phe_len": 0.12, "tong_phe": 1.64}, {"date": "2026-06-20", "machine": "Máy cắt 6", "code": "VT.TC.006", "name": "Túi cuộn rau quả cỡ 30x40", "material": "PE", "kg_input": 49.2, "gam_tc": 5.0, "gam_dq": 5.04, "sl_cuon": "196", "cuon_thep": 3.0, "so_tui_thung": 24.0, "so_thung": 2.0, "cuon_le": 0, "kg_dat": 47.12, "kg_ko_dat": 0, "cai_dat": 3332.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0.1, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 0.1}, {"date": "2026-06-20", "machine": "Máy cắt 4", "code": "VT.TC.005", "name": "Túi cuộn rau quả cỡ 20x30", "material": "PE", "kg_input": 14.4, "gam_tc": 2.8, "gam_dq": 2.71, "sl_cuon": "370", "cuon_thep": 3.0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 13.0, "kg_ko_dat": 0, "cai_dat": 4870.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 1.24, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 1.24}, {"date": "2026-06-20", "machine": "Máy cắt 4", "code": "VT.TC.005", "name": "Túi cuộn rau quả cỡ 20x30", "material": "PE", "kg_input": 12.6, "gam_tc": 2.8, "gam_dq": 3.45, "sl_cuon": "287", "cuon_thep": 3.0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 12.0, "kg_ko_dat": 0, "cai_dat": 3444.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0.18, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 0.18}, {"date": "2026-06-20", "machine": "Máy cắt 4", "code": "VT.TC.005", "name": "Túi cuộn rau quả cỡ 20x30", "material": "PE", "kg_input": 11.0, "gam_tc": 2.8, "gam_dq": 2.45, "sl_cuon": "405", "cuon_thep": 3.0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 11.0, "kg_ko_dat": 0, "cai_dat": 4455.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0.0, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 0.0}, {"date": "2026-06-20", "machine": "Máy cắt 4", "code": "VT.TC.005", "name": "Túi cuộn rau quả cỡ 20x30", "material": "PE", "kg_input": 12.4, "gam_tc": 2.8, "gam_dq": 3.15, "sl_cuon": "317", "cuon_thep": 3.0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 12.0, "kg_ko_dat": 0, "cai_dat": 3804.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0.22, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 0.22}, {"date": "2026-06-20", "machine": "Máy cắt 17", "code": "VT.TC.005", "name": "Túi cuộn rau quả cỡ 20x30", "material": "PE", "kg_input": 16.0, "gam_tc": 4.0, "gam_dq": 3.59, "sl_cuon": "180", "cuon_thep": 1.0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 4.5, "kg_ko_dat": 9.2, "cai_dat": 900.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 1.6, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 1.6}, {"date": "2026-06-21", "machine": "Máy cắt 4", "code": "VT.TC.005", "name": "Túi cuộn rau quả cỡ 20x30", "material": "PE", "kg_input": 74.8, "gam_tc": 2.8, "gam_dq": 3.35, "sl_cuon": "298", "cuon_thep": 3.0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 60.0, "kg_ko_dat": 11.0, "cai_dat": 21142.0, "cai_ko_dat": 3927.0, "phe_dq": 0, "phe_sx": 2.74, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 2.74}, {"date": "2026-06-21", "machine": "Máy cắt 4", "code": "VT.TC.006", "name": "Túi cuộn rau quả cỡ 30x40", "material": "PE", "kg_input": 229.1, "gam_tc": 5.6, "gam_dq": 5.02, "sl_cuon": "200", "cuon_thep": 3.0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 222.66, "kg_ko_dat": 4.0, "cai_dat": 44838.0, "cai_ko_dat": 575.0, "phe_dq": 0, "phe_sx": 1.4, "phe_tra": 0, "phe_len": 1.0, "tong_phe": 2.4}, {"date": "2026-06-21", "machine": "Máy cắt 17", "code": "VT.TC.005", "name": "Túi cuộn rau quả cỡ 20x30", "material": "PE", "kg_input": 14.3, "gam_tc": 4.0, "gam_dq": 3.59, "sl_cuon": "250", "cuon_thep": 4.0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 11.7, "kg_ko_dat": 1.6, "cai_dat": 3250.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0.8, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 0.8}, {"date": "2026-06-21", "machine": "Máy cắt 16", "code": "VT.TC.004", "name": "Túi đựng thực phẩm VANTA 25x35cm (1kg/cuộn)", "material": "PE", "kg_input": 23.5, "gam_tc": 4.0, "gam_dq": 3.2, "sl_cuon": "287", "cuon_thep": 1.0, "so_tui_thung": 0, "so_thung": 5.0, "cuon_le": 0, "kg_dat": 21.0, "kg_ko_dat": 2.5, "cai_dat": 6601.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 0.1, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 0.1}, {"date": "2026-06-21", "machine": "Máy cắt 16", "code": "VT.TC.004", "name": "Túi đựng thực phẩm VANTA 25x35cm (1kg/cuộn)", "material": "PE", "kg_input": 66.3, "gam_tc": 4.0, "gam_dq": 4.46, "sl_cuon": "260", "cuon_thep": 12.0, "so_tui_thung": 0, "so_thung": 6.0, "cuon_le": 0, "kg_dat": 45.5, "kg_ko_dat": 12.9, "cai_dat": 9459.0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 3.7, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 3.7}, {"date": "2026-06-22", "machine": "Máy cắt 6", "code": "VT.TC.006", "name": "Túi cuộn rau quả cỡ 30x40", "material": "PE", "kg_input": 248.0, "gam_tc": 5.6, "gam_dq": 4.78, "sl_cuon": "209", "cuon_thep": 3.0, "so_tui_thung": 8.0, "so_thung": 9.0, "cuon_le": 0, "kg_dat": 246.0, "kg_ko_dat": 2.0, "cai_dat": 51337.0, "cai_ko_dat": 411.0, "phe_dq": 0, "phe_sx": 0, "phe_tra": 0, "phe_len": 0.1, "tong_phe": 0.1}, {"date": "2026-06-23", "machine": "Máy cắt 17", "code": "VT.TC.005", "name": "Túi cuộn rau quả cỡ 20x30", "material": "PE", "kg_input": 140.0, "gam_tc": 2.8, "gam_dq": 2.61, "sl_cuon": "356", "cuon_thep": 3.0, "so_tui_thung": 12.0, "so_thung": 11.0, "cuon_le": 0, "kg_dat": 130.9, "kg_ko_dat": 8.3, "cai_dat": 44552.0, "cai_ko_dat": 2976.0, "phe_dq": 0, "phe_sx": 9.5, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 9.5}, {"date": "2026-06-23", "machine": "Máy cắt 16", "code": "VT.TC.002", "name": "Túi đựng thực phẩm VANTA 25x35cm (500gr/cuộn)", "material": "PE", "kg_input": 61.0, "gam_tc": 4.06, "gam_dq": 3.76, "sl_cuon": "103", "cuon_thep": 3.0, "so_tui_thung": 10.0, "so_thung": 2.0, "cuon_le": 0, "kg_dat": 43.5, "kg_ko_dat": 21.2, "cai_dat": 2447.0, "cai_ko_dat": 4582.0, "phe_dq": 0, "phe_sx": 10.26, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 10.26}, {"date": "2026-06-24", "machine": "Máy cắt 15", "code": "VT.TQX.006", "name": "T-shirt nhiệt trắng không in 25 x 40+150", "material": "PE", "kg_input": 18.48, "gam_tc": 4.86, "gam_dq": 0, "sl_cuon": "", "cuon_thep": 0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 0, "kg_ko_dat": 0, "cai_dat": 0, "cai_ko_dat": 0, "phe_dq": 0, "phe_sx": 3.92, "phe_tra": 0, "phe_len": 0.2, "tong_phe": 4.12}, {"date": "2026-06-25", "machine": "Máy cắt 14", "code": "VT.TQX.BIO.002", "name": "Túi T shit nhiệt PHSH trắng không in 30x50cm", "material": "PHSH", "kg_input": 31.7, "gam_tc": 15.48, "gam_dq": 11.5, "sl_cuon": "29", "cuon_thep": 3.0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 2.0, "kg_ko_dat": 7.22, "cai_dat": 174.0, "cai_ko_dat": 628.0, "phe_dq": 1.34, "phe_sx": 4.38, "phe_tra": 0, "phe_len": 0.4, "tong_phe": 6.12}, {"date": "2026-06-25", "machine": "Máy cắt 15", "code": "VT.TQX.007", "name": "T-shirt nhiệt trắng in logo 20x30", "material": "PE", "kg_input": 23.2, "gam_tc": 2.32, "gam_dq": 3.06, "sl_cuon": "326", "cuon_thep": 10.0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 11.9, "kg_ko_dat": 0, "cai_dat": 4364.0, "cai_ko_dat": 0, "phe_dq": 1.9, "phe_sx": 3.5, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 5.4}, {"date": "2026-06-25", "machine": "Máy cắt 13", "code": "VT.TQX.006", "name": "T-shirt nhiệt trắng không in 25 x 40+150", "material": "PE", "kg_input": 17.3, "gam_tc": 4.86, "gam_dq": 5.06, "sl_cuon": "198", "cuon_thep": 6.0, "so_tui_thung": 0, "so_thung": 0, "cuon_le": 0, "kg_dat": 13.5, "kg_ko_dat": 1.0, "cai_dat": 2673.0, "cai_ko_dat": 220.0, "phe_dq": 2.48, "phe_sx": 1.0, "phe_tra": 0, "phe_len": 0.0, "tong_phe": 3.48}, {"date": "2026-06-26", "machine": "Máy cắt 4", "code": "VT.TC.005", "name": "Túi cuộn rau quả cỡ 20x30", "material": "PE", "kg_input": 191.9, "gam_tc": 2.8, "gam_dq": 2.9, "sl_cuon": "360", "cuon_thep": 3.0, "so_tui_thung": 24.0, "so_thung": 0, "cuon_le": 54.0, "kg_dat": 188.98, "kg_ko_dat": 2.0, "cai_dat": 26518.0, "cai_ko_dat": 684.0, "phe_dq": 0, "phe_sx": 0, "phe_tra": 0, "phe_len": 0.78, "tong_phe": 0.78}, {"date": "2026-06-26", "machine": "Máy cắt 6", "code": "VT.TC.006", "name": "Túi cuộn rau quả cỡ 30x40", "material": "PE", "kg_input": 333.1, "gam_tc": 5.6, "gam_dq": 4.46, "sl_cuon": "224", "cuon_thep": 3.0, "so_tui_thung": 8.0, "so_thung": 13.0, "cuon_le": 0, "kg_dat": 318.0, "kg_ko_dat": 14.28, "cai_dat": 62268.0, "cai_ko_dat": 2788.0, "phe_dq": 0, "phe_sx": 1.0, "phe_tra": 0, "phe_len": 1.0, "tong_phe": 2.0}, {"date": "2026-06-26", "machine": "Máy cắt 15", "code": "VT.TQX.006", "name": "T-shirt nhiệt trắng không in 25 x 40+150", "material": "PE", "kg_input": 68.32, "gam_tc": 4.86, "gam_dq": 3.47, "sl_cuon": "20", "cuon_thep": 15.0, "so_tui_thung": 12.0, "so_thung": 3.0, "cuon_le": 0, "kg_dat": 48.0, "kg_ko_dat": 8.4, "cai_dat": 12975.0, "cai_ko_dat": 2372.0, "phe_dq": 11.2, "phe_sx": 2.3, "phe_tra": 0, "phe_len": 0.5, "tong_phe": 14.0}, {"date": "2026-06-26", "machine": "Máy cắt 16", "code": "VT.TC.004", "name": "Túi đựng thực phẩm VANTA 25x35cm (1kg/cuộn)", "material": "PE", "kg_input": 132.0, "gam_tc": 4.06, "gam_dq": 4.06, "sl_cuon": "215", "cuon_thep": 1.0, "so_tui_thung": 12.0, "so_thung": 11.0, "cuon_le": 0, "kg_dat": 137.0, "kg_ko_dat": 4.0, "cai_dat": 29207.0, "cai_ko_dat": 860.0, "phe_dq": 0, "phe_sx": 2.8, "phe_tra": 0, "phe_len": 0, "tong_phe": 2.8}, {"date": "2026-06-26", "machine": "Máy cắt 16", "code": "VT.TC.002", "name": "Túi đựng thực phẩm VANTA 25x35cm (500gr/cuộn)", "material": "PE", "kg_input": 90.8, "gam_tc": 4.06, "gam_dq": 4.3, "sl_cuon": "91", "cuon_thep": 3.0, "so_tui_thung": 24.0, "so_thung": 7.0, "cuon_le": 0, "kg_dat": 85.5, "kg_ko_dat": 15.1, "cai_dat": 14781.0, "cai_ko_dat": 2470.0, "phe_dq": 0, "phe_sx": 10.4, "phe_tra": 0, "phe_len": 0, "tong_phe": 10.4}, {"date": "2026-06-27", "machine": "Máy cắt 4", "code": "VT.TC.005", "name": "Túi cuộn rau quả cỡ 20x30", "material": "PE", "kg_input": 157.5, "gam_tc": 2.8, "gam_dq": 3.4, "sl_cuon": "340", "cuon_thep": 3.0, "so_tui_thung": 8.0, "so_thung": 7.0, "cuon_le": 0, "kg_dat": 154.0, "kg_ko_dat": 3.0, "cai_dat": 59855.0, "cai_ko_dat": 1215.0, "phe_dq": 0, "phe_sx": 0.3, "phe_tra": 0, "phe_len": 0.2, "tong_phe": 0.5}, {"date": "2026-06-27", "machine": "Máy cắt 6", "code": "VT.TC.006", "name": "Túi cuộn rau quả cỡ 30x40", "material": "PE", "kg_input": 316.5, "gam_tc": 5.6, "gam_dq": 5.2, "sl_cuon": "192", "cuon_thep": 3.0, "so_tui_thung": 8.0, "so_thung": 13.0, "cuon_le": 0, "kg_dat": 309.0, "kg_ko_dat": 6.95, "cai_dat": 62208.0, "cai_ko_dat": 1411.0, "phe_dq": 0, "phe_sx": 0, "phe_tra": 0, "phe_len": 0.5, "tong_phe": 0.5}, {"date": "2026-06-27", "machine": "Máy cắt 15", "code": "VT.TQX.006", "name": "T-shirt nhiệt trắng không in 25 x 40+150", "material": "PE", "kg_input": 33.38, "gam_tc": 4.86, "gam_dq": 3.2, "sl_cuon": "24", "cuon_thep": 13.0, "so_tui_thung": 12.0, "so_thung": 2.0, "cuon_le": 0, "kg_dat": 23.5, "kg_ko_dat": 2.8, "cai_dat": 6888.0, "cai_ko_dat": 814.0, "phe_dq": 4.5, "phe_sx": 1.7, "phe_tra": 0, "phe_len": 0.5, "tong_phe": 6.7}, {"date": "2026-06-27", "machine": "Máy cắt 16", "code": "VT.TC.004", "name": "Túi đựng thực phẩm VANTA 25x35cm (1kg/cuộn)", "material": "PE", "kg_input": 220.4, "gam_tc": 4.0, "gam_dq": 4.4, "sl_cuon": "200", "cuon_thep": 1.0, "so_tui_thung": 12.0, "so_thung": 20.0, "cuon_le": 0, "kg_dat": 236.0, "kg_ko_dat": 2.0, "cai_dat": 47848.0, "cai_ko_dat": 417.0, "phe_dq": 0, "phe_sx": 5.8, "phe_tra": 0, "phe_len": 0, "tong_phe": 5.8}, {"date": "2026-06-27", "machine": "Máy cắt 17", "code": "VT.TC.003", "name": "Túi đựng thực phẩm VANTA 20x30cm (1kg/cuộn)", "material": "PE", "kg_input": 123.4, "gam_tc": 0, "gam_dq": 2.7, "sl_cuon": "336", "cuon_thep": 1.0, "so_tui_thung": 16.0, "so_thung": 8.0, "cuon_le": 0, "kg_dat": 114.12, "kg_ko_dat": 9.0, "cai_dat": 38303.0, "cai_ko_dat": 3081.0, "phe_dq": 0, "phe_sx": 2.6, "phe_tra": 5.15, "phe_len": 0.0, "tong_phe": 7.75}];
+
+// ═══════════ GLOBALS ═══════════════════════════════════════
+var _db=null,_records={},_catRecords={},_user='',_charts={},_sdkReady=false;
+
+// SDK check
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    if(typeof firebase!=='undefined'&&firebase.database){
+      _sdkReady=true;
+      var s=document.getElementById('sdkStatus');
+      s.className='sdk-ok';s.textContent='✅ Firebase SDK sẵn sàng';
+      tryAutoLogin();
+    } else {
+      var s=document.getElementById('sdkStatus');
+      s.className='sdk-err';s.textContent='❌ Không load được SDK — kiểm tra kết nối internet';
+    }
+  },800);
+});
+
+function tryAutoLogin(){
+  try{
+    var c=JSON.parse(localStorage.getItem('pv_cfg3')||'null');
+    if(!c)return;
+    document.getElementById('cfg_apiKey').value=c.apiKey||'';
+    document.getElementById('cfg_dbUrl').value=c.dbUrl||'';
+    document.getElementById('cfg_projectId').value=c.pid||'';
+    document.getElementById('cfg_appId').value=c.appId||'';
+    document.getElementById('cfg_username').value=c.uname||'';
+    connectFirebase();
+  }catch(e){}
+}
+
+function connectFirebase(){
+  if(!_sdkReady){showSetupErr('SDK chưa sẵn sàng, tải lại trang.');return;}
+  var apiKey=g('cfg_apiKey'),dbUrl=g('cfg_dbUrl'),pid=g('cfg_projectId'),appId=g('cfg_appId'),uname=g('cfg_username');
+  var errEl=document.getElementById('setupError');errEl.style.display='none';
+  if(!apiKey||!dbUrl||!pid){showSetupErr('Thiếu API Key / Database URL / Project ID');return;}
+  if(!uname){showSetupErr('Vui lòng nhập tên của bạn');return;}
+  if(!dbUrl.includes('firebaseio.com')&&!dbUrl.includes('firebasedatabase.app')){showSetupErr('Database URL không hợp lệ');return;}
+  var btn=document.getElementById('btnConnect');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Đang kết nối…';
+  try{
+    try{firebase.app().delete();}catch(e){}
+    firebase.initializeApp({apiKey,authDomain:pid+'.firebaseapp.com',databaseURL:dbUrl,projectId:pid,storageBucket:pid+'.appspot.com',appId:appId||undefined});
+    _db=firebase.database();
+    _db.ref('_ping').set({t:Date.now()}).then(function(){
+      localStorage.setItem('pv_cfg3',JSON.stringify({apiKey,dbUrl,pid,appId,uname}));
+      _user=uname;startApp();
+    }).catch(function(err){
+      var hint=err.code==='PERMISSION_DENIED'?' → Vào Firebase → Realtime Database → Rules → test mode':'';
+      showSetupErr('Kết nối thất bại: '+err.message+hint);
+      btn.disabled=false;btn.innerHTML='🔌 Kết nối Firebase';
+    });
+  }catch(err){showSetupErr('Lỗi: '+err.message);btn.disabled=false;btn.innerHTML='🔌 Kết nối Firebase';}
+}
+function showSetupErr(m){var e=document.getElementById('setupError');e.textContent=m;e.style.display='block';}
+function doLogout(){if(!confirm('Đăng xuất?'))return;localStorage.removeItem('pv_cfg3');location.reload();}
+
+function startApp(){
+  document.getElementById('setupScreen').style.display='none';
+  document.getElementById('mainApp').style.display='block';
+  document.getElementById('hdrUser').textContent=_user;
+  document.getElementById('hdrDate').textContent=new Date().toLocaleDateString('vi-VN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('f_date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('c_date').value=new Date().toISOString().split('T')[0];
+
+  _db.ref('.info/connected').on('value',function(s){
+    var ok=s.val();
+    document.getElementById('connDot').className='conn-dot '+(ok?'conn-ok':'conn-err');
+    document.getElementById('connText').textContent=ok?'Đã kết nối':'Mất kết nối';
+  });
+  _db.ref('records').on('value',function(s){_records=s.val()||{};renderAll();});
+  _db.ref('cat_records').on('value',function(s){_catRecords=s.val()||{};renderCatAll();});
+}
+
+// ─── Tab navigation ─────────────────────────────────────────
+function switchTab(el,color){
+  document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.remove('active','active-orange');});
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  el.classList.add(color==='orange'?'active-orange':'active');
+  document.getElementById('page-'+el.dataset.tab).classList.add('active');
+  renderAll();renderCatAll();
+}
+
+// ─── Helpers ─────────────────────────────────────────────────
+function g(id){var e=document.getElementById(id);return e?(e.value||'').trim():'';}
+function sv(id,val){var e=document.getElementById(id);if(e)e.value=val;}
+
+// ─── SX calc (%NG = NG / (OK+NG)) ─────────────────────────
+function calcForm(){
+  var ok=+g('f_ok')||0,ng=+g('f_ng')||0,total=ok+ng;
+  sv('f_ng_rate',total>0?((ng/total)*100).toFixed(2)+'%':'');
+  ['d1','d2','d3'].forEach(function(k){
+    var q=+g('f_'+k+'q')||0;
+    sv('f_'+k+'r',ng>0&&q>0?((q/ng)*100).toFixed(2)+'%':'');
+  });
+  var oq=+g('f_otq')||0;
+  sv('f_otr',ng>0&&oq>0?((oq/ng)*100).toFixed(2)+'%':'');
+}
+
+// ─── Cat calc ─────────────────────────────────────────────
+function calcCat(){
+  var kgin=+g('c_kgin')||0;
+  var pdq=+g('c_pdq')||0,psx=+g('c_psx')||0,ptr=+g('c_ptr')||0,plm=+g('c_plm')||0;
+  var tphe=pdq+psx+ptr+plm;
+  sv('c_tphe', tphe>0?tphe.toFixed(3):'');
+  sv('c_pct', kgin>0&&tphe>0?((tphe/kgin)*100).toFixed(2)+'%':'');
+}
+
+// ─── Save SX ─────────────────────────────────────────────────
+function saveRecord(){
+  var date=g('f_date'),code=g('f_code');
+  if(!date||!code){showToast('Nhập Ngày và Mã hàng!',true);return;}
+  if(!_db){showToast('Chưa kết nối Firebase!',true);return;}
+  var ok=+g('f_ok')||0,ng=+g('f_ng')||0,total=ok+ng;
+  var d1q=+g('f_d1q')||0,d2q=+g('f_d2q')||0,d3q=+g('f_d3q')||0,otq=+g('f_otq')||0;
+  var rec={
+    date,code,machine:g('f_machine'),stage:g('f_stage'),
+    input:+g('f_input')||0,target:+g('f_target')||0,ok,ng,
+    ng_rate:total>0?+((ng/total)*100).toFixed(2):0,
+    d1n:g('f_d1n')||'Lỗi 1',d1q,d1r:ng>0?+((d1q/ng)*100).toFixed(2):0,
+    d2n:g('f_d2n')||'Lỗi 2',d2q,d2r:ng>0?+((d2q/ng)*100).toFixed(2):0,
+    d3n:g('f_d3n')||'Lỗi 3',d3q,d3r:ng>0?+((d3q/ng)*100).toFixed(2):0,
+    otn:g('f_otn')||'Lỗi khác',otq,otr:ng>0?+((otq/ng)*100).toFixed(2):0,
+    down_min:+g('f_dnm')||0,down_reason:g('f_dnr'),down_scrap:+g('f_dns')||0,
+    user:_user,ts:Date.now()
+  };
+  var btn=document.getElementById('btnSave');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  _db.ref('records').push(rec).then(function(){
+    showToast('✅ Đã lưu!');clearEntryRow();
+    sv('saveInfo','Lưu lúc '+new Date().toLocaleTimeString('vi-VN'));
+    btn.disabled=false;btn.innerHTML='💾 Lưu';
+  }).catch(function(err){showToast('❌ '+err.message,true);btn.disabled=false;btn.innerHTML='💾 Lưu';});
+}
+
+function clearEntryRow(){
+  ['f_code','f_machine','f_stage','f_input','f_target','f_ok','f_ng','f_ng_rate',
+   'f_d1n','f_d1q','f_d1r','f_d2n','f_d2q','f_d2r','f_d3n','f_d3q','f_d3r',
+   'f_otn','f_otq','f_otr','f_dnm','f_dnr','f_dns'].forEach(function(id){sv(id,'');});
+}
+
+function deleteRecord(id){
+  if(!confirm('Xóa?'))return;
+  _db.ref('records/'+id).remove().then(function(){showToast('Đã xóa');}).catch(function(e){showToast(e.message,true);});
+}
+
+// ─── Save Cat ─────────────────────────────────────────────────
+function saveCatRecord(){
+  var date=g('c_date'),machine=g('c_machine'),code=g('c_code');
+  if(!date||!machine||!code){showToast('Nhập Ngày, Máy và Mã SP!',true);return;}
+  if(!_db){showToast('Chưa kết nối Firebase!',true);return;}
+  var kgin=+g('c_kgin')||0;
+  var pdq=+g('c_pdq')||0,psx=+g('c_psx')||0,ptr=+g('c_ptr')||0,plm=+g('c_plm')||0;
+  var tphe=pdq+psx+ptr+plm;
+  var rec={
+    date,machine,code,name:g('c_name'),material:g('c_mat')||'PE',
+    kg_input:kgin,gam_tc:+g('c_gtc')||0,gam_dq:+g('c_gdq')||0,
+    sl_cuon:g('c_slc'),cuon_thep:+g('c_ct')||0,
+    so_tui_thung:+g('c_stt')||0,so_thung:+g('c_stb')||0,cuon_le:+g('c_cl')||0,
+    kg_dat:+g('c_kgdat')||0,kg_ko_dat:+g('c_kgng')||0,
+    cai_dat:+g('c_caidat')||0,cai_ko_dat:+g('c_caing')||0,
+    phe_dq:pdq,phe_sx:psx,phe_tra:ptr,phe_len:plm,
+    tong_phe:+tphe.toFixed(3),
+    pct_phe:kgin>0?+((tphe/kgin)*100).toFixed(2):0,
+    user:_user,source:'manual',ts:Date.now()
+  };
+  var btn=document.getElementById('btnCatSave');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  _db.ref('cat_records').push(rec).then(function(){
+    showToast('✅ Đã lưu bản ghi Cắt!');clearCatRow();
+    sv('catSaveInfo','Lưu lúc '+new Date().toLocaleTimeString('vi-VN'));
+    btn.disabled=false;btn.innerHTML='💾 Lưu';
+  }).catch(function(e){showToast('❌ '+e.message,true);btn.disabled=false;btn.innerHTML='💾 Lưu';});
+}
+
+function clearCatRow(){
+  ['c_machine','c_code','c_name','c_mat','c_kgin','c_gtc','c_gdq','c_slc','c_ct',
+   'c_stt','c_stb','c_cl','c_kgdat','c_kgng','c_caidat','c_caing',
+   'c_pdq','c_psx','c_ptr','c_plm','c_tphe','c_pct'].forEach(function(id){sv(id,'');});
+}
+
+function deleteCatRecord(id){
+  if(id.startsWith('imp_')){showToast('Bản ghi import từ Excel không thể xóa',true);return;}
+  if(!confirm('Xóa bản ghi cắt này?'))return;
+  _db.ref('cat_records/'+id).remove().then(function(){showToast('Đã xóa');}).catch(function(e){showToast(e.message,true);});
+}
+
+// ─── Data helpers ─────────────────────────────────────────────
+function getArr(){
+  return Object.entries(_records).map(function(e){return Object.assign({id:e[0]},e[1]);}).sort(function(a,b){return b.ts-a.ts;});
+}
+function getFiltered(){
+  var from=g('fl_from'),to=g('fl_to'),code=(g('fl_code')||'').toLowerCase(),machine=(g('fl_machine')||'').toLowerCase();
+  return getArr().filter(function(r){
+    if(from&&r.date<from)return false;if(to&&r.date>to)return false;
+    if(code&&!(r.code||'').toLowerCase().includes(code))return false;
+    if(machine&&!(r.machine||'').toLowerCase().includes(machine))return false;
+    return true;
+  });
+}
+
+// Merge Firebase cat + import
+function getAllCat(){
+  // Firebase cat records
+  var fbArr=Object.entries(_catRecords).map(function(e){return Object.assign({id:e[0]},e[1]);});
+  // Import records (add prefix imp_ so they're distinguishable)
+  var impArr=CAT_IMPORT.map(function(r,i){return Object.assign({id:'imp_'+i,source:'excel',user:'Import Excel'},r);});
+  // Merge, deduplicate by date+machine+code (firebase takes priority)
+  var fbKeys=new Set(fbArr.map(function(r){return r.date+'|'+r.machine+'|'+r.code;}));
+  var filtered=impArr.filter(function(r){return !fbKeys.has(r.date+'|'+r.machine+'|'+r.code);});
+  return fbArr.concat(filtered).sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+}
+
+function getCatFiltered(){
+  var from=g('cfl_from'),to=g('cfl_to'),code=(g('cfl_code')||'').toLowerCase(),machine=(g('cfl_machine')||'').toLowerCase();
+  return getAllCat().filter(function(r){
+    if(from&&r.date<from)return false;if(to&&r.date>to)return false;
+    if(code&&!(r.code||'').toLowerCase().includes(code))return false;
+    if(machine&&!(r.machine||'').toLowerCase().includes(machine))return false;
+    return true;
+  });
+}
+
+// ─── Render all ──────────────────────────────────────────────
+function renderAll(){renderKPI();renderCharts();renderTable();renderDowntime();renderActivity();}
+function renderCatAll(){renderCatKPI();renderCatCharts();renderCatTable();}
+
+// ─── KPI SX ─────────────────────────────────────────────────
+function renderKPI(){
+  var arr=getArr();
+  var tOK=arr.reduce(function(s,r){return s+r.ok;},0);
+  var tNG=arr.reduce(function(s,r){return s+r.ng;},0);
+  var total=tOK+tNG;
+  var ngR=total>0?((tNG/total)*100).toFixed(2):0;
+  var tDn=arr.reduce(function(s,r){return s+(r.down_min||0);},0);
+  var ev=arr.filter(function(r){return r.down_min>0;}).length;
+  var td=new Date().toISOString().split('T')[0];
+  var rt=arr.filter(function(r){return r.date===td;}).length;
+  var el=document.getElementById('kpiRow');if(!el)return;
+  el.innerHTML=[
+    kpi('Tổng KL OK',tOK.toLocaleString()+' kg','khối lượng đạt','var(--green)'),
+    kpi('Tổng KL NG',tNG.toLocaleString()+' kg','khối lượng lỗi','var(--red)'),
+    kpi('Tỷ lệ NG',ngR+'%','NG÷(OK+NG)',ngR>5?'var(--red)':'var(--yellow)'),
+    kpi('Tổng dừng máy',tDn+' ph',ev+' sự cố','var(--yellow)'),
+    kpi('Nhập hôm nay',rt,'bản ghi mới','var(--accent)')
+  ].join('');
+
+  // Cat KPI on dashboard
+  var catArr=getAllCat();
+  var catDat=catArr.reduce(function(s,r){return s+(r.kg_dat||0);},0);
+  var catPhe=catArr.reduce(function(s,r){return s+(r.tong_phe||0);},0);
+  var catIn=catArr.reduce(function(s,r){return s+(r.kg_input||0);},0);
+  var catPct=catIn>0?((catPhe/catIn)*100).toFixed(2):0;
+  var catCai=catArr.reduce(function(s,r){return s+(r.cai_dat||0);},0);
+  var dashCat=document.getElementById('catKpiDash');
+  if(dashCat)dashCat.innerHTML=[
+    kpi('KL đạt (Cắt)',catDat.toFixed(1)+' kg','tổng khối lượng đạt','var(--orange)'),
+    kpi('Tổng phế (Cắt)',catPhe.toFixed(1)+' kg','all loại phế','var(--red)'),
+    kpi('Tỷ lệ phế',catPct+'%','Phế÷KL vào','var(--yellow)'),
+    kpi('Cái đạt',catCai.toLocaleString(),'tổng sản phẩm','var(--green)'),
+    kpi('Bản ghi cắt',catArr.length,'tổng dữ liệu','var(--orange)')
+  ].join('');
+}
+
+function kpi(label,val,sub,color){
+  return '<div class="kpi-card" style="--kpi-color:'+color+'"><div class="kpi-label">'+label+'</div><div class="kpi-val" style="color:'+color+'">'+val+'</div><div class="kpi-sub">'+sub+'</div></div>';
+}
+
+// ─── Charts SX ──────────────────────────────────────────────
+function dc(id){if(_charts[id]){_charts[id].destroy();delete _charts[id];}}
+function dkOpts(yLabel,color){
+  var def={responsive:true,plugins:{legend:{labels:{color:'#64748b',font:{size:10}}}},
+    scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#2a3045'}},
+      y:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#2a3045'},title:{display:!!yLabel,text:yLabel||'',color:'#64748b',font:{size:10}}}}};
+  return def;
+}
+
+function renderCharts(){
+  var arr=getArr();
+  var cutoff=new Date();cutoff.setDate(cutoff.getDate()-14);
+  var recent=arr.filter(function(r){return new Date(r.date)>=cutoff;});
+  var dates=[...new Set(recent.map(function(r){return r.date;}))].sort();
+
+  dc('cBar');var cBar=document.getElementById('cBar');
+  if(cBar)_charts.cBar=new Chart(cBar,{type:'bar',data:{labels:dates.map(function(d){return d.slice(5);}),
+    datasets:[
+      {label:'KL OK (kg)',data:dates.map(function(d){return recent.filter(function(r){return r.date===d;}).reduce(function(s,r){return s+r.ok;},0);}),backgroundColor:'rgba(34,197,94,.7)',borderRadius:4},
+      {label:'KL NG (kg)',data:dates.map(function(d){return recent.filter(function(r){return r.date===d;}).reduce(function(s,r){return s+r.ng;},0);}),backgroundColor:'rgba(239,68,68,.7)',borderRadius:4}
+    ]},options:dkOpts('kg')});
+
+  dc('cPie');var cPie=document.getElementById('cPie');
+  if(cPie){
+    var dm={};
+    arr.forEach(function(r){[['d1n','d1q'],['d2n','d2q'],['d3n','d3q'],['otn','otq']].forEach(function(p){var nm=r[p[0]]||'Khác',qty=r[p[1]]||0;if(qty>0)dm[nm]=(dm[nm]||0)+qty;});});
+    _charts.cPie=new Chart(cPie,{type:'doughnut',data:{labels:Object.keys(dm),datasets:[{data:Object.values(dm),backgroundColor:['#ef4444','#f59e0b','#3b82f6','#22c55e','#a78bfa','#fb923c'],borderWidth:2,borderColor:'#161b27'}]},options:{responsive:true,plugins:{legend:{labels:{color:'#64748b',font:{size:10}}}}}});
+  }
+
+  dc('cLine');var cLine=document.getElementById('cLine');
+  if(cLine)_charts.cLine=new Chart(cLine,{type:'line',data:{labels:dates.map(function(d){return d.slice(5);}),
+    datasets:[{label:'NG%',data:dates.map(function(d){
+      var rows=recent.filter(function(r){return r.date===d;});
+      var ok=rows.reduce(function(s,r){return s+r.ok;},0),ng=rows.reduce(function(s,r){return s+r.ng;},0),total=ok+ng;
+      return total>0?+((ng/total)*100).toFixed(2):0;
+    }),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.35,pointRadius:3,pointBackgroundColor:'#ef4444'}]},options:dkOpts('%')});
+
+  dc('cDown');var cDown=document.getElementById('cDown');
+  if(cDown)_charts.cDown=new Chart(cDown,{type:'bar',data:{labels:dates.map(function(d){return d.slice(5);}),
+    datasets:[{label:'Dừng (ph)',data:dates.map(function(d){return recent.filter(function(r){return r.date===d;}).reduce(function(s,r){return s+(r.down_min||0);},0);}),backgroundColor:'rgba(245,158,11,.7)',borderRadius:4}]},options:dkOpts('Phút')});
+
+  // Top defects
+  var dm2={};
+  arr.forEach(function(r){[['d1n','d1q'],['d2n','d2q'],['d3n','d3q'],['otn','otq']].forEach(function(p){var nm=r[p[0]]||'Khác',qty=r[p[1]]||0;if(qty>0)dm2[nm]=(dm2[nm]||0)+qty;});});
+  var sorted=Object.entries(dm2).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+  var tdDef=Object.values(dm2).reduce(function(s,v){return s+v;},0);
+  var topEl=document.getElementById('topDefects');
+  if(topEl&&sorted.length>0){
+    var colors=['var(--red)','var(--yellow)','var(--accent)','var(--green)','var(--purple)'];
+    topEl.innerHTML='<div class="sec-title" style="margin-bottom:8px">🏆 Top lỗi nhiều nhất (kg)</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:12px">'
+      +sorted.map(function(e,i){return '<div class="kpi-card" style="--kpi-color:'+colors[i]+'"><div class="kpi-label">#'+(i+1)+' '+e[0]+'</div><div class="kpi-val" style="color:'+colors[i]+';font-size:17px">'+e[1]+' kg</div><div class="kpi-sub">'+(tdDef>0?((e[1]/tdDef)*100).toFixed(1):'0')+'%</div></div>';}).join('')+'</div>';
+  } else if(topEl) topEl.innerHTML='';
+
+  renderDowntimeCharts();renderByUserChart();
+}
+
+// ─── Cat KPI ─────────────────────────────────────────────────
+function renderCatKPI(){
+  var arr=getAllCat();
+  var catDat=arr.reduce(function(s,r){return s+(r.kg_dat||0);},0);
+  var catPhe=arr.reduce(function(s,r){return s+(r.tong_phe||0);},0);
+  var catIn=arr.reduce(function(s,r){return s+(r.kg_input||0);},0);
+  var catCai=arr.reduce(function(s,r){return s+(r.cai_dat||0);},0);
+  var catPct=catIn>0?((catPhe/catIn)*100).toFixed(2):0;
+  var el=document.getElementById('catKpi');if(!el)return;
+  el.innerHTML=[
+    kpi('KL đầu vào',catIn.toFixed(1)+' kg','tổng cuộn vào','var(--text3)'),
+    kpi('KL đạt',catDat.toFixed(1)+' kg','khối lượng sản phẩm đạt','var(--green)'),
+    kpi('Tổng phế',catPhe.toFixed(1)+' kg','tất cả loại phế','var(--red)'),
+    kpi('Tỷ lệ phế',catPct+'%','Phế÷KL đầu vào',catPct>8?'var(--red)':'var(--yellow)'),
+    kpi('Tổng cái đạt',catCai.toLocaleString(),'sản phẩm','var(--orange)')
+  ].join('');
+}
+
+// ─── Cat Charts ──────────────────────────────────────────────
+function renderCatCharts(){
+  var arr=getAllCat();
+  var dates=[...new Set(arr.map(function(r){return r.date;}))].sort().slice(-14);
+
+  dc('cCatBar');var c1=document.getElementById('cCatBar');
+  if(c1)_charts.cCatBar=new Chart(c1,{type:'bar',data:{labels:dates.map(function(d){return d.slice(5);}),
+    datasets:[
+      {label:'KL đạt (kg)',data:dates.map(function(d){return arr.filter(function(r){return r.date===d;}).reduce(function(s,r){return s+(r.kg_dat||0);},0);}),backgroundColor:'rgba(34,197,94,.7)',borderRadius:4},
+      {label:'Tổng phế (kg)',data:dates.map(function(d){return arr.filter(function(r){return r.date===d;}).reduce(function(s,r){return s+(r.tong_phe||0);},0);}),backgroundColor:'rgba(249,115,22,.7)',borderRadius:4}
+    ]},options:dkOpts('kg')});
+
+  dc('cCatPie');var c2=document.getElementById('cCatPie');
+  if(c2){
+    var pdq=arr.reduce(function(s,r){return s+(r.phe_dq||0);},0);
+    var psx=arr.reduce(function(s,r){return s+(r.phe_sx||0);},0);
+    var ptr=arr.reduce(function(s,r){return s+(r.phe_tra||0);},0);
+    var plm=arr.reduce(function(s,r){return s+(r.phe_len||0);},0);
+    var vals=[pdq,psx,ptr,plm].filter(function(v){return v>0;});
+    var labs=['Phế ĐQ','Phế SX/cuộn','Phế trả thổi','Phế lên máy'].filter(function(_,i){return [pdq,psx,ptr,plm][i]>0;});
+    _charts.cCatPie=new Chart(c2,{type:'doughnut',data:{labels:labs,datasets:[{data:vals,backgroundColor:['#f97316','#ef4444','#f59e0b','#a78bfa'],borderWidth:2,borderColor:'#161b27'}]},options:{responsive:true,plugins:{legend:{labels:{color:'#64748b',font:{size:10}}}}}});
+  }
+
+  dc('cCatLine');var c3=document.getElementById('cCatLine');
+  if(c3)_charts.cCatLine=new Chart(c3,{type:'line',data:{labels:dates.map(function(d){return d.slice(5);}),
+    datasets:[{label:'%Phế',data:dates.map(function(d){
+      var rows=arr.filter(function(r){return r.date===d;});
+      var kin=rows.reduce(function(s,r){return s+(r.kg_input||0);},0);
+      var kph=rows.reduce(function(s,r){return s+(r.tong_phe||0);},0);
+      return kin>0?+((kph/kin)*100).toFixed(2):0;
+    }),borderColor:'#f97316',backgroundColor:'rgba(249,115,22,.1)',fill:true,tension:.35,pointRadius:3,pointBackgroundColor:'#f97316'}]},options:dkOpts('%')});
+
+  dc('cCatMachine');var c4=document.getElementById('cCatMachine');
+  if(c4){
+    var mm={};
+    arr.forEach(function(r){var k=r.machine||'Không rõ';mm[k]=(mm[k]||0)+(r.kg_dat||0);});
+    var sorted=Object.entries(mm).sort(function(a,b){return b[1]-a[1];});
+    _charts.cCatMachine=new Chart(c4,{type:'bar',data:{
+      labels:sorted.map(function(e){return e[0];}),
+      datasets:[{label:'KL đạt (kg)',data:sorted.map(function(e){return +e[1].toFixed(1);}),backgroundColor:'rgba(249,115,22,.75)',borderRadius:5}]
+    },options:Object.assign({},dkOpts('kg'),{indexAxis:'y'})});
+  }
+}
+
+// ─── Cat Table ───────────────────────────────────────────────
+function renderCatTable(){
+  var tbody=document.getElementById('catTblBody'),empty=document.getElementById('catTblEmpty'),cnt=document.getElementById('catRowCount');
+  if(!tbody)return;
+  var filtered=getCatFiltered();
+  if(cnt)cnt.textContent=filtered.length+' bản ghi';
+  if(filtered.length===0){tbody.innerHTML='';if(empty)empty.style.display='block';return;}
+  if(empty)empty.style.display='none';
+  tbody.innerHTML=filtered.map(function(r,i){
+    var isImport=r.source==='excel';
+    var pct=r.pct_phe!=null?r.pct_phe:(r.kg_input>0&&r.tong_phe>0?+((r.tong_phe/r.kg_input)*100).toFixed(2):0);
+    return '<tr>'
+      +'<td>'+(i+1)+'</td>'
+      +'<td>'+r.date+'</td>'
+      +'<td>'+r.machine+'</td>'
+      +'<td><b>'+r.code+'</b></td>'
+      +'<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis" title="'+(r.name||'')+'">'+((r.name||'').length>18?(r.name||'').slice(0,18)+'…':(r.name||'-'))+'</td>'
+      +'<td><span class="badge bg-orange">'+(r.material||'PE')+'</span></td>'
+      +'<td>'+(r.kg_input||0)+' kg</td>'
+      +'<td>'+(r.gam_tc||0)+'</td>'
+      +'<td>'+(r.gam_dq||0)+'</td>'
+      +'<td>'+(r.sl_cuon||'-')+'</td>'
+      +'<td class="td-ok">'+(r.kg_dat||0)+' kg</td>'
+      +'<td class="td-ng">'+(r.kg_ko_dat||0)+' kg</td>'
+      +'<td>'+(r.cai_dat?r.cai_dat.toLocaleString():0)+'</td>'
+      +'<td class="td-ng">'+(r.cai_ko_dat||0)+'</td>'
+      +'<td>'+(r.phe_dq||0)+'</td>'
+      +'<td>'+(r.phe_sx||0)+'</td>'
+      +'<td>'+(r.phe_tra||0)+'</td>'
+      +'<td>'+(r.phe_len||0)+'</td>'
+      +'<td class="td-warn">'+(r.tong_phe||0)+' kg</td>'
+      +'<td class="'+(pct>8?'td-ng':'td-warn')+'">'+pct+'%</td>'
+      +'<td><span class="badge '+(isImport?'bg-orange':'bg-green')+'">'+(isImport?'Excel':'Manual')+'</span></td>'
+      +'<td>'+(isImport?'':'<button class="btn-del" onclick="deleteCatRecord(\''+r.id+'\')">🗑</button>')+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+// ─── Table SX ────────────────────────────────────────────────
+function renderTable(){
+  var tbody=document.getElementById('tblBody'),empty=document.getElementById('tblEmpty'),cnt=document.getElementById('rowCount');
+  if(!tbody)return;
+  var filtered=getFiltered();
+  if(cnt)cnt.textContent=filtered.length+' bản ghi';
+  if(filtered.length===0){tbody.innerHTML='';if(empty)empty.style.display='block';return;}
+  if(empty)empty.style.display='none';
+  tbody.innerHTML=filtered.map(function(r,i){
+    return '<tr><td>'+(i+1)+'</td><td>'+r.date+'</td><td><b>'+r.code+'</b></td>'
+      +'<td>'+(r.machine||'-')+'</td><td>'+(r.stage||'-')+'</td>'
+      +'<td>'+(r.input||0)+' kg</td><td>'+(r.target||0)+' kg</td>'
+      +'<td class="td-ok">'+r.ok+' kg</td><td class="td-ng">'+r.ng+' kg</td>'
+      +'<td class="'+(r.ng_rate>5?'td-ng':'td-ok')+'">'+r.ng_rate+'%</td>'
+      +'<td>'+r.d1n+'</td><td>'+r.d1q+'</td><td>'+r.d1r+'%</td>'
+      +'<td>'+r.d2n+'</td><td>'+r.d2q+'</td><td>'+r.d2r+'%</td>'
+      +'<td>'+r.d3n+'</td><td>'+r.d3q+'</td><td>'+r.d3r+'%</td>'
+      +'<td>'+r.otn+'</td><td>'+r.otq+'</td><td>'+r.otr+'%</td>'
+      +'<td class="'+(r.down_min>0?'td-warn':'')+'">'+(r.down_min||0)+'</td>'
+      +'<td>'+(r.down_reason||'-')+'</td><td>'+(r.down_scrap||0)+' kg</td>'
+      +'<td style="color:var(--text3)">'+(r.user||'-')+'</td>'
+      +'<td><button class="btn-del" onclick="deleteRecord(\''+r.id+'\')">🗑</button></td></tr>';
+  }).join('');
+}
+function clearFilters(){['fl_from','fl_to','fl_code','fl_machine'].forEach(function(id){sv(id,'');});renderTable();}
+
+// ─── Downtime ────────────────────────────────────────────────
+function renderDowntime(){
+  var arr=getArr().filter(function(r){return r.down_min>0;});
+  var dtKpi=document.getElementById('dtKpi');
+  if(dtKpi){
+    var tMin=arr.reduce(function(s,r){return s+(r.down_min||0);},0);
+    var tSc=arr.reduce(function(s,r){return s+(r.down_scrap||0);},0);
+    var mc=[...new Set(arr.map(function(r){return r.machine||''}))].length;
+    var wt=arr.length>0?Math.max.apply(null,arr.map(function(r){return r.down_min||0;})):0;
+    dtKpi.innerHTML=[
+      kpi('Tổng sự cố',arr.length,'lần dừng','var(--red)'),
+      kpi('Tổng dừng',tMin+' ph',(tMin/60).toFixed(1)+' giờ','var(--yellow)'),
+      kpi('Phế/dừng',tSc+' kg','','var(--red)'),
+      kpi('Máy ảnh hưởng',mc,'thiết bị','var(--accent)'),
+      kpi('Dừng lâu nhất',wt+' ph','1 sự cố','var(--yellow)')
+    ].join('');
+  }
+  var dtBody=document.getElementById('dtBody'),dtEmpty=document.getElementById('dtEmpty');
+  if(!dtBody)return;
+  if(arr.length===0){dtBody.innerHTML='';if(dtEmpty)dtEmpty.style.display='block';return;}
+  if(dtEmpty)dtEmpty.style.display='none';
+  dtBody.innerHTML=arr.sort(function(a,b){return b.date.localeCompare(a.date);}).map(function(r,i){
+    var lv=r.down_min>=60?'bg-red':r.down_min>=30?'bg-yellow':'bg-green';
+    var lb=r.down_min>=60?'Nghiêm trọng':r.down_min>=30?'Trung bình':'Nhẹ';
+    return '<tr><td>'+(i+1)+'</td><td>'+r.date+'</td><td><b>'+r.code+'</b></td><td>'+(r.machine||'-')+'</td><td>'+(r.stage||'-')+'</td>'
+      +'<td class="td-warn">'+r.down_min+'</td><td>'+(r.down_reason||'-')+'</td>'
+      +'<td class="td-ng">'+(r.down_scrap||0)+' kg</td>'
+      +'<td><span class="badge '+lv+'">'+lb+'</span></td>'
+      +'<td style="color:var(--text3)">'+(r.user||'-')+'</td></tr>';
+  }).join('');
+}
+
+function renderDowntimeCharts(){
+  var arr=getArr().filter(function(r){return r.down_min>0;});
+  dc('cDtMachine');var c1=document.getElementById('cDtMachine');
+  if(c1){var mm={};arr.forEach(function(r){var k=r.machine||'Không rõ';mm[k]=(mm[k]||0)+(r.down_min||0);});
+    _charts.cDtMachine=new Chart(c1,{type:'bar',data:{labels:Object.keys(mm),datasets:[{label:'Phút dừng',data:Object.values(mm),backgroundColor:'rgba(245,158,11,.75)',borderRadius:5}]},options:dkOpts('Phút')});}
+  dc('cDtReason');var c2=document.getElementById('cDtReason');
+  if(c2){var rm={};arr.filter(function(r){return r.down_reason;}).forEach(function(r){rm[r.down_reason]=(rm[r.down_reason]||0)+(r.down_min||0);});
+    _charts.cDtReason=new Chart(c2,{type:'pie',data:{labels:Object.keys(rm),datasets:[{data:Object.values(rm),backgroundColor:['#f59e0b','#ef4444','#3b82f6','#22c55e','#a78bfa'],borderWidth:2,borderColor:'#161b27'}]},options:{responsive:true,plugins:{legend:{labels:{color:'#64748b',font:{size:10}}}}}});}
+}
+
+// ─── Activity ────────────────────────────────────────────────
+function renderActivity(){
+  var arr=getArr().slice(0,25);
+  var feedEl=document.getElementById('feedWrap');
+  if(feedEl){
+    if(arr.length===0){feedEl.innerHTML='<div class="empty-state" style="padding:14px"><div class="ico">📡</div><div>Chưa có hoạt động</div></div>';return;}
+    feedEl.innerHTML=arr.map(function(r){
+      var ini=(r.user||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var t=new Date(r.ts).toLocaleString('vi-VN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      return '<div class="feed-item"><div class="feed-avatar">'+ini+'</div><div class="feed-body"><div class="feed-user">'+(r.user||'Ẩn danh')+'</div>'
+        +'<div class="feed-detail">['+r.code+'] '+r.date+' — OK: '+r.ok+'kg | NG: '+r.ng+'kg'+(r.machine?' | '+r.machine:'')+'</div></div>'
+        +'<div class="feed-time">'+t+'</div></div>';
+    }).join('');
+  }
+  var um={};
+  getArr().forEach(function(r){var u=r.user||'Ẩn danh';if(!um[u])um[u]={cnt:0,ok:0,ng:0,last:''};um[u].cnt++;um[u].ok+=r.ok;um[u].ng+=r.ng;if(r.date>um[u].last)um[u].last=r.date;});
+  var ub=document.getElementById('userBody');
+  if(ub)ub.innerHTML=Object.entries(um).sort(function(a,b){return b[1].cnt-a[1].cnt;}).map(function(e,i){
+    var total=e[1].ok+e[1].ng;var rate=total>0?((e[1].ng/total)*100).toFixed(2):0;
+    return '<tr><td>'+(i+1)+'</td><td><b>'+e[0]+'</b></td><td>'+e[1].cnt+'</td>'
+      +'<td class="td-ok">'+e[1].ok+' kg</td><td class="td-ng">'+e[1].ng+' kg</td>'
+      +'<td class="'+(rate>5?'td-ng':'td-ok')+'">'+rate+'%</td><td>'+(e[1].last||'-')+'</td></tr>';
+  }).join('');
+}
+
+function renderByUserChart(){
+  dc('cByUser');var ctx=document.getElementById('cByUser');if(!ctx)return;
+  var um={};getArr().forEach(function(r){var u=r.user||'Ẩn danh';um[u]=(um[u]||0)+1;});
+  _charts.cByUser=new Chart(ctx,{type:'bar',data:{labels:Object.keys(um),datasets:[{label:'Bản ghi',data:Object.values(um),backgroundColor:'rgba(59,130,246,.75)',borderRadius:5}]},options:Object.assign({},dkOpts('Bản ghi'),{indexAxis:'y'})});
+}
+
+// ─── CSV export ──────────────────────────────────────────────
+function exportCSV(){
+  var BOM='\uFEFF';
+  var hdr=['Ngày','Mã hàng','Máy','Công đoạn','NVL vào(kg)','Mục tiêu(kg)','KL OK(kg)','KL NG(kg)','NG%',
+    'Lỗi 1','KL1','%1','Lỗi 2','KL2','%2','Lỗi 3','KL3','%3','Lỗi khác','KLk','%k',
+    'Dừng(ph)','Lý do','Phế/dừng(kg)','Người nhập'];
+  var rows=getArr().map(function(r){
+    return [r.date,r.code,r.machine,r.stage,r.input,r.target,r.ok,r.ng,r.ng_rate,
+      r.d1n,r.d1q,r.d1r,r.d2n,r.d2q,r.d2r,r.d3n,r.d3q,r.d3r,r.otn,r.otq,r.otr,
+      r.down_min,r.down_reason,r.down_scrap,r.user].map(function(x){return '"'+(x!=null?x:'')+'"';}).join(',');
+  });
+  var catHdr=['Ngày','Máy','Mã SP','Tên SP','VL','KL vào(kg)','g/túiTC','g ĐQ','Chiếc/cuộn',
+    'KL đạt(kg)','KL NG(kg)','Cái đạt','Cái NG','Phế ĐQ','Phế SX','Phế trả','Phế lên','Tổng phế','%Phế','Nguồn'];
+  var catRows=getAllCat().map(function(r){
+    return [r.date,r.machine,r.code,r.name,r.material,r.kg_input,r.gam_tc,r.gam_dq,r.sl_cuon,
+      r.kg_dat,r.kg_ko_dat,r.cai_dat,r.cai_ko_dat,r.phe_dq,r.phe_sx,r.phe_tra,r.phe_len,r.tong_phe,r.pct_phe,r.source||'manual']
+      .map(function(x){return '"'+(x!=null?x:'')+'"';}).join(',');
+  });
+  var csv=BOM+'=== SẢN XUẤT CHUNG ===\n'+[hdr.join(',')].concat(rows).join('\n')
+    +'\n\n=== CÔNG ĐOẠN CẮT ===\n'+[catHdr.join(',')].concat(catRows).join('\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='BaoCaoSX_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+// ─── Toast ──────────────────────────────────────────────────
+function showToast(msg,isError){
+  var t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(isError?' error':'');
+  setTimeout(function(){t.classList.add('show');},10);setTimeout(function(){t.classList.remove('show');},2800);
+}
+</script>
+</body>
+</html>
